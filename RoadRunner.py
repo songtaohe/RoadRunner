@@ -2334,12 +2334,13 @@ class RoadForest:
 
 
 
-		ExitImage = np.zeros((np.shape(mask)[0], np.shape(mask)[1]), dtype = np.uint8)
-		ExitImage = Red
+		#ExitImage = np.zeros((np.shape(mask)[0], np.shape(mask)[1]), dtype = np.uint8)
+		#ExitImage = Red
 
-		ExitImage[np.where((Alpha == 0))] = 0 
+		#ExitImage[np.where((Alpha == 0))] = 0 
 
-		self.ExitMask = ExitImage
+		#self.ExitMask = ExitImage
+		self.ExitMask = None
 		self.ExitPoints = {}
 
 		for item in config["Exits"]:

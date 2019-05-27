@@ -4,7 +4,7 @@ import math
 import sys
 import scipy.ndimage
 import scipy.misc
-import cv
+#import cv
 import cv2
 from PIL import Image
 import pickle
@@ -263,8 +263,8 @@ for i in range(len(dumpDat[1])):
 
 
 RoadGraph.ReverseDirectionLink()
-RoadGraph.region = region
-OSMRoadGraph.region = region
+#RoadGraph.region = region
+#OSMRoadGraph.region = region
 
 pickle.dump(RoadGraph, open(sys.argv[2],"w"))
 

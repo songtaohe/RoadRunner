@@ -4,7 +4,7 @@ import math
 import sys
 import scipy.ndimage
 import scipy.misc
-import cv
+#import cv
 import cv2
 from PIL import Image
 import pickle
