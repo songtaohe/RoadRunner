@@ -1,7 +1,7 @@
 
-# Incremental Graph Construction (old)
+# RoadRunner
 
-Contents:
+**Contents**
 
 
 * [Preparing GPS data](#preparing-gps-data)
@@ -19,7 +19,7 @@ Contents:
 ### Preparing GPS Data
 Related source code:
 
-* the GPSTraceServer folder
+* the GPSTraceServer folder (The code is in GO)
 
 In RoadRunner, we need to handle several queries on GPS traces. The GPS dataset can be very large, ranging from 10 GB to 100+ GB. To speed up these queries, we create index for the raw GPS data.
 
@@ -34,8 +34,10 @@ In the trip folder, each GPS trip should be stored in one file. The format of th
 
 In each trip file, each line is one GPS sample. The format is,
 ```
-local_id, lat, lon, timestamp
+local_id,lat,lon,timestamp
 ```
+
+(**NO EXTRA SPACE**)
 
 The local_id here can be just the line number. 
 
@@ -66,7 +68,10 @@ For the index_folder and trip_folder, you have to add '/' at the end of the fold
 
 The Roadrunner code will interact with this trace server through TCP. 
 
-
+You have to install the following package for the trace server. 
+```
+go get "github.com/ajstarks/svgo"
+```
 
 ### Config File
 

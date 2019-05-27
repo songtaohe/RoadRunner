@@ -1,0 +1,22 @@
+{
+  "Entrances": [
+    {
+      "Lat": 42.364546, 
+      "Lon": -71.099656, 
+      "ID": 1
+    }
+  ], 
+  "CNNInput": null, 
+  "Exits": [], 
+  "Region": [
+    42.364546, 
+    -71.099656, 
+    42.374546, 
+    -71.089656, 
+  ], 
+  "RegionMask": null, 
+  "OutputFolder": "example/output/",
+  "history_length": 4,
+  "minimal_number_of_trips_deferred_branch": 5,
+  "minimal_number_of_trips": 2
+}
