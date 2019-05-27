@@ -14,6 +14,8 @@
 
 * [Merge RoadRunner with Other Solutions](#Merge-RoadRunner-with-Other-Solutions)
 
+* [Example](#Example)
+
 
 
 ### Preparing GPS Data
@@ -169,3 +171,6 @@ TODO
 
 TODO
 
+### Example
+
+A template folder structrue is shown in the 'example' folder. There are 5 fake GPS trajectories and a config file. You could use this folder as a starting point. 
