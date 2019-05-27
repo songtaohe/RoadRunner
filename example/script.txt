@@ -1,0 +1,27 @@
+# Create index 
+
+cd GPSTraceServer
+
+go run create_index.go ../example/trip_folder/ ../example/index_folder/ 
+
+
+
+# Start GPS trace server 
+
+cd GPSTraceServer
+
+go run trace_server.go ../example/index_folder/ ../example/trip_folder/ 1000000
+
+
+
+# Run RoadRunner
+
+mkdir example/output
+
+python RoadRunner.py example/config.json test_
+
+
+# Convert graph format 
+
+python RoadForest2RoadGraph.py example/output/OUTPUT_FILE_LAST  test_graph.p 
+
