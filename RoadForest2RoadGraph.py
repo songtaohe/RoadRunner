@@ -5,8 +5,8 @@ import sys
 import scipy.ndimage
 import scipy.misc
 #import cv
-import cv2
-from PIL import Image
+#import cv2
+#from PIL import Image
 import pickle
 import RoadGraph as splfy
 import matplotlib.pyplot as plt
@@ -24,9 +24,9 @@ def pointToLineDistance(p1,p2,p3):
 	# p1 --> p2 is the line
 	# p1 is (0,0)
 
-	dist = np.sqrt(p2[0] * p2[0] + p2[1] * p2[1]) 
+	dist = np.sqrt(p2[0] * p2[0] + p2[1] * p2[1])
 
-	proj_length = (p2[0] * p3[0] + p2[1] * p3[1]) / dist 
+	proj_length = (p2[0] * p3[0] + p2[1] * p3[1]) / dist
 
 	if proj_length > dist :
 		a = p3[0] - p2[0]
@@ -69,7 +69,7 @@ def pointToLineDistanceLatLon(p1,p2,p3):
 
 
 dumpDat = pickle.load(open(sys.argv[1], "rb"))
-	
+
 RoadGraph = splfy.RoadGraph()
 RoadGraph.region = dumpDat[0]
 
@@ -93,7 +93,7 @@ for treenodes in trees:
 				print(tid,p)
 				print(trees[tid][p]['similarWith'])
 
-				exit()		
+				exit()
 
 			node['similarWith'][0] = tid
 			node['similarWith'][1] = p
@@ -191,7 +191,7 @@ def closeMergePoint(treenodes, trees, threshold = 0.00006):
 				if trees[tid][p]['similarWith'][1] == p and trees[tid][p]['similarWith'][0] == tid:
 					break
 				tid,p = trees[tid][p]['similarWith'][0],trees[tid][p]['similarWith'][1]
-				
+
 				if (tid,p) in loop_item:
 					break
 				else:
@@ -221,10 +221,10 @@ for i in range(len(dumpDat[1])):
 		lat1 = node['lat']
 		lon1 = node['lon']
 
-		oid1 = id1 
-		olat1 = lat1 
-		olon1 = lon1 
-		otid1 = i 
+		oid1 = id1
+		olat1 = lat1
+		olon1 = lon1
+		otid1 = i
 
 
 		id2 = node['parent']
@@ -235,11 +235,11 @@ for i in range(len(dumpDat[1])):
 		# 	print(id1, lat1,lon1, node['similarWith'])
 		# 	print(id2, lat2,lon2, dumpDat[1][i][id2]['similarWith'])
 
-		tid1 = i 
+		tid1 = i
 		tid2 = i
 
 		if node['similarWith'][0] != -1:
-			tid1 = node['similarWith'][0] 
+			tid1 = node['similarWith'][0]
 			id1_ = node['similarWith'][1]
 			lat1 = dumpDat[1][node['similarWith'][0]][id1_]['lat']
 			lon1 = dumpDat[1][node['similarWith'][0]][id1_]['lon']
@@ -256,7 +256,7 @@ for i in range(len(dumpDat[1])):
 
 		RoadGraph.addEdge(str(tid2)+"_"+str(id2), lat2, lon2, str(otid1)+"_"+str(oid1), olat1, olon1)
 
-		if not (otid1 == tid1 and oid1 == id1): 
+		if not (otid1 == tid1 and oid1 == id1):
 			RoadGraph.addEdge(str(otid1)+"_"+str(oid1), olat1, olon1, str(tid1)+"_"+str(id1), lat1, lon1)
 
 
@@ -266,7 +266,6 @@ RoadGraph.ReverseDirectionLink()
 #RoadGraph.region = region
 #OSMRoadGraph.region = region
 
-pickle.dump(RoadGraph, open(sys.argv[2],"w"))
+pickle.dump(RoadGraph, open(sys.argv[2],"wb"))
 
 #TOPORender.RenderGraphSVG(OSMRoadGraph, RoadGraph, sys.argv[3])
-

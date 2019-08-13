@@ -5,10 +5,10 @@ import sys
 import scipy.ndimage
 import scipy.misc
 #import cv
-import cv2
-from PIL import Image
+#import cv2
+#from PIL import Image
 import pickle
-import bintrees 
+import bintrees
 from PathSimilarity import PathSimilarity
 from rtree import index
 from scipy import interpolate
@@ -17,13 +17,13 @@ from multiprocessing import Process
 from multiprocessing.pool import Pool
 import zlib
 from geojson import LineString, Feature, FeatureCollection
-import geojson 
+import geojson
 
 
 # This is not needed
 # import os
 # sys.path.append(os.path.dirname(sys.path[0])+"/MLInputGen/")
-# import mapdriver as md 
+# import mapdriver as md
 
 
 
@@ -150,7 +150,7 @@ def simplfyWithShortestPathBatchStatic(self, sourceIDs, state = 1, idx = 0):
 			results.append(simplfyWithShortestPathStatic(self, sourceID, state = state))
 			c = c + 1
 
-		return results 
+		return results
 
 
 def simplfyWithShortestPathStatic(self, sourceID, state=1, deferred_apply = False):
@@ -163,7 +163,7 @@ def simplfyWithShortestPathStatic(self, sourceID, state=1, deferred_apply = Fals
 
 		result['edgePairs'] = {}
 
-		result['locations'] = {} 
+		result['locations'] = {}
 
 
 		tree = bintrees.BinaryTree()
@@ -315,21 +315,21 @@ def simplfyWithShortestPathStatic(self, sourceID, state=1, deferred_apply = Fals
 
 class RoadGraph:
 	def __init__(self, filename=None, skip_threshold = 0.0):
-		self.nodeHash = {} # [tree_idx*10000000 + local_id] ->  id 
-		self.nodeHashReverse = {} 
+		self.nodeHash = {} # [tree_idx*10000000 + local_id] ->  id
+		self.nodeHashReverse = {}
 		self.nodes = {}	# id -> [lat,lon]
 		self.edges = {} # id -> [n1, n2]
 		self.nodeLink = {}   # id -> list of next node
-		self.nodeID = 0 
+		self.nodeID = 0
 		self.edgeID = 0
-		self.edgeHash = {} # [nid1 * 10000000 + nid2] -> edge id 
+		self.edgeHash = {} # [nid1 * 10000000 + nid2] -> edge id
 		self.edgeScore = {}
 		self.nodeTerminate = {}
 		self.nodeScore = {}
 		self.nodeLocations = {}
 		self.edgeInt = {}
 		self.deletedNodes = {}
-		
+
 
 		if filename is not None:
 
@@ -342,7 +342,7 @@ class RoadGraph:
 			#self.forest = forest
 
 			self.NumOfTrees = len(forest)
-			self.forest = [1 for _ in range(self.NumOfTrees)] 
+			self.forest = [1 for _ in range(self.NumOfTrees)]
 
 			tid = 0
 			for t in forest:
@@ -357,7 +357,7 @@ class RoadGraph:
 							continue
 
 					if n['edgeScore'] < skip_threshold : # skip those low confidential edges
-					
+
 						continue
 
 					if n['similarWith'][0] != -1:
@@ -366,7 +366,7 @@ class RoadGraph:
 						thislat = forest[n['similarWith'][0]][n['similarWith'][1]]['lat']
 						thislon = forest[n['similarWith'][0]][n['similarWith'][1]]['lon']
 
-						
+
 
 					if n['OutRegion'] == 1:
 						self.nodeTerminate[tid*10000000+n['parent']] = 1
@@ -392,12 +392,12 @@ class RoadGraph:
 
 
 		self.ReverseDirectionLink()
-		
+
 
 
 
 	def addEdge(self, nid1,lat1,lon1,nid2,lat2,lon2, reverse=False, nodeScore1 = 0, nodeScore2 = 0, edgeScore = 0):  #n1d1->n1d2
-		
+
 
 		if nid1 not in self.nodeHash.keys():
 			self.nodeHash[nid1] = self.nodeID
@@ -444,7 +444,7 @@ class RoadGraph:
 
 
 	def addEdgeToOneExistedNode(self, nid1,lat1,lon1,nid2, reverse=False, nodeScore1 = 0, edgeScore = 0):  #n1d1->n1d2
-		
+
 
 		if nid1 not in self.nodeHash.keys():
 			self.nodeHash[nid1] = self.nodeID
@@ -503,7 +503,7 @@ class RoadGraph:
 
 
 	def simplfyWithShortestPathParallel(self, ProcessNum = 12):
-		
+
 		pool = Pool(ProcessNum)
 
 		sourceIDlist = [[] for i in range(ProcessNum)]
@@ -582,7 +582,7 @@ class RoadGraph:
 
 
 
-			
+
 
 
 	#@staticmethod
@@ -595,7 +595,7 @@ class RoadGraph:
 			results.append(self.simplfyWithShortestPath(sourceID, state = state))
 			c = c + 1
 
-		return results 
+		return results
 
 
 
@@ -612,7 +612,7 @@ class RoadGraph:
 
 		result['edgePairs'] = {}
 
-		result['locations'] = {} 
+		result['locations'] = {}
 
 
 		tree = bintrees.BinaryTree()
@@ -764,7 +764,7 @@ class RoadGraph:
 
 	def mergeTwoNodesBiDirection(self, id1, id2): #remove id2
 		if id1 == id2:
-			return 
+			return
 
 		print("id1, id2", id1, id2)
 
@@ -814,7 +814,7 @@ class RoadGraph:
 
 	def mergeTwoNodes(self, id1, id2): #remove id2
 		if id1 == id2:
-			return 
+			return
 
 		self.nodes[id1][0] = (self.nodes[id1][0] + self.nodes[id2][0]) / 2
 		self.nodes[id1][1] = (self.nodes[id1][1] + self.nodes[id2][1]) / 2
@@ -837,7 +837,7 @@ class RoadGraph:
 				localid1 = id1
 				localid2 = next_node
 
-				self.edges[self.edgeID] = [localid1, localid2] 
+				self.edges[self.edgeID] = [localid1, localid2]
 				self.edgeHash[localid1 * 10000000 + localid2] = self.edgeID
 				self.edgeScore[self.edgeID] = 10
 				self.edgeID += 1
@@ -871,7 +871,7 @@ class RoadGraph:
 
 	def mergeTwoNodesReserveEdge(self, id1, id2): #remove id2
 		if id1 == id2:
-			return 
+			return
 
 		self.nodes[id1][0] = (self.nodes[id1][0] + self.nodes[id2][0]) / 2
 		self.nodes[id1][1] = (self.nodes[id1][1] + self.nodes[id2][1]) / 2
@@ -926,7 +926,7 @@ class RoadGraph:
 				edges[(self.edges[edgeID][0],self.edges[edgeID][1])] = edgeID
 
 		for edge, edgeid in edges.iteritems():
-			self.edgeHash[edge[0] * 10000000 + edge[1]] = edgeid 
+			self.edgeHash[edge[0] * 10000000 + edge[1]] = edgeid
 
 		print("Remove", c, "Duplicated Edges")
 
@@ -938,19 +938,19 @@ class RoadGraph:
 		path_tmp = list(range(length))
 
 		def searchPath(idthis, depth, pid = -1):
-			#global paths 
-			#global path_tmp 
+			#global paths
+			#global path_tmp
 			#global length
 
 			if len(paths) > limit:
-				return 
+				return
 
 			path_tmp[length - depth] = idthis
 
 			if depth == 1:
 				p = map(lambda x:[self.nodes[x][0], self.nodes[x][1], x], path_tmp)
 				paths.append(p)
-				return 
+				return
 
 			for next_node in self.nodeLink[idthis] :
 				ok = True
@@ -1038,7 +1038,7 @@ class RoadGraph:
 
 				if idthis in self.nodeScore.keys():
 					if self.nodeScore[idthis] > score_threshold:
-						
+
 
 						lat = self.nodes[idthis][0]
 						lon = self.nodes[idthis][1]
@@ -1069,7 +1069,7 @@ class RoadGraph:
 							lon_ = self.nodes[item][1]
 
 							a = lat_ - lat
-							b = lon_ - lon 
+							b = lon_ - lon
 
 							return np.sqrt(a*a + b*b)
 
@@ -1078,7 +1078,7 @@ class RoadGraph:
 						c = 0
 						for possible_node in possible_nodes:
 							if possible_node == idthis:
-								continue 
+								continue
 
 							if possible_node in self.deletedNodes.keys():
 								continue
@@ -1111,7 +1111,7 @@ class RoadGraph:
 										best_p2 = p2
 
 
-						
+
 						if best_d < threshold:
 							print(idthis, best_d, best_err,update_counter)
 							print(best_p1)
@@ -1134,9 +1134,9 @@ class RoadGraph:
 									self.mergeTwoNodes(best_p1[i][2], best_p2[i][2])
 									if best_p2[i][2] != best_p1[i][2]:
 										self.deletedNodes[best_p2[i][2]] = best_p1[i][2]
-								
+
 								#print("Deleted ", self.deletedNodes)
-								
+
 
 			print(update_counter," Update(s)")
 			#break
@@ -1145,13 +1145,13 @@ class RoadGraph:
 				break
 
 		return update_counter
-			
+
 
 	def Smoothen(self, n = 3):
 
 		self.edgeInt = {}
 
-		 
+
 
 		for edgeId, edge in self.edges.iteritems():
 			n1 = edge[0]
@@ -1169,7 +1169,7 @@ class RoadGraph:
 
 			for nn in self.nodeLinkReverse[n1]:
 				if nn not in self.deletedNodes.keys() and self.nodeScore[nn] > 0 and self.edgeScore[self.edgeHash[nn * 10000000 + n1]] > 0:
-					n0 = nn 
+					n0 = nn
 
 
 			if n0 == -1 :
@@ -1238,7 +1238,7 @@ class RoadGraph:
 					return
 
 			if dist > r :
-				return 
+				return
 
 
 			lat1 = self.nodes[node_cur][0]
@@ -1246,7 +1246,7 @@ class RoadGraph:
 
 			localNodeList[node_cur] = 1
 			localNodeDistance[node_cur] = dist
-			
+
 			#mables.append((lat1, lon1))
 
 			if node_cur not in self.nodeLinkReverse.keys():
@@ -1263,7 +1263,7 @@ class RoadGraph:
 
 				if node_cur * 10000000 + next_node in self.edgeHash.keys():
 					edgeS = self.edgeScore[self.edgeHash[node_cur * 10000000 + next_node]]
-				
+
 				if next_node * 10000000 + node_cur in self.edgeHash.keys():
 					edgeS = max(edgeS, self.edgeScore[self.edgeHash[next_node * 10000000 + node_cur]])
 
@@ -1301,9 +1301,9 @@ class RoadGraph:
 				cur = bias
 
 				while cur < l:
-					alpha = cur / l 
+					alpha = cur / l
 				#for a in range(1,num):
-				#	alpha = float(a)/num 
+				#	alpha = float(a)/num
 					if dist + l * alpha > r :
 						break
 
@@ -1371,7 +1371,7 @@ class RoadGraph:
 				self.removeNode(nodeid)
 				deleted += 1
 
-		return deleted 
+		return deleted
 
 
 
@@ -1521,7 +1521,7 @@ class RoadGraph:
 				center_lat = lat
 				center_lon = lon
 
-				meter_lat = 1.0 / (111111.0) 
+				meter_lat = 1.0 / (111111.0)
 				meter_lon = 1.0 / (111111.0 * math.cos(lat / 360.0 * (math.pi * 2)))
 
 				p1 = (center_lat - 12.5 * meter_lat * dir_lat, center_lon - 12.5 * meter_lon * dir_lon)
@@ -1539,7 +1539,7 @@ class RoadGraph:
 					can_dir_lat, can_dir_lon = latlonNorm((self.nodes[can_node2][0] - self.nodes[can_node1][0], self.nodes[can_node2][1] - self.nodes[can_node1][1]), lat = self.nodes[node2][0])
 
 
-					angle_dist = pointDistance((can_dir_lat, can_dir_lon), (dir_lat, dir_lon)) 
+					angle_dist = pointDistance((can_dir_lat, can_dir_lon), (dir_lat, dir_lon))
 
 					if angle_dist < 1.9 and angle_dist > 0.1 :
 						continue
@@ -1556,7 +1556,7 @@ class RoadGraph:
 
 
 					if extend_length < min_dist:
-						
+
 						can_p1 = (ilat - 12.5 * meter_lat * can_dir_lat, ilon - 12.5 * meter_lon * can_dir_lon)
 						can_p2 = (ilat + 12.5 * meter_lat * can_dir_lat, ilon + 12.5 * meter_lon * can_dir_lon)
 
@@ -1615,7 +1615,7 @@ class RoadGraph:
 				node_list = node_list + cclist
 
 
-			
+
 	def extendDeadEndP2P(self, lowbound = 0):
 		idx = index.Index()
 
@@ -1752,7 +1752,7 @@ class RoadGraph:
 						dlat1, dlon1 = latlonNorm((lat2 - lat1, lon2 - lon1))
 						dlat2, dlon2 = latlonNorm((lat4 - lat3, lon4 - lon3))
 
-						d = dlat1 * dlat2 + dlon1 * dlon2 
+						d = dlat1 * dlat2 + dlon1 * dlon2
 
 						angle = abs(d)
 
@@ -1796,7 +1796,7 @@ class RoadGraph:
 
 						print(edgeId, p_edgeId, angle, result, center_lat1 ,center_lon1)
 
-						edgePairs.append((edgeId, p_edgeId, angle, result)) 
+						edgePairs.append((edgeId, p_edgeId, angle, result))
 						edgePairsMask.append((edgeId, p_edgeId))
 
 						#if len(edgePairs) > 100:
@@ -1901,7 +1901,7 @@ def edgeIntersection(baseX, baseY, dX, dY, n1X, n1Y, n2X, n2Y):
 
 	alpha = c / t
 
-	if alpha < 0 : 
+	if alpha < 0 :
 		return 0,0,0,0
 
 	iX = baseX + alpha * dX
@@ -1922,7 +1922,7 @@ class RoadGraphCombiner:
 
 		if CNNOutput is not None:
 			cnn_dat = scipy.ndimage.imread(CNNOutput) * 255
-			
+
 
 
 		# Add to index
@@ -1931,7 +1931,7 @@ class RoadGraphCombiner:
 			n1 = edge[0]
 			n2 = edge[1]
 
-		
+
 			if n1 in RoadGraphA.deletedNodes.keys() or n2 in RoadGraphA.deletedNodes.keys():
 				continue
 
@@ -1968,7 +1968,7 @@ class RoadGraphCombiner:
 			if nn1 == 1 or nn2 == 1 :
 				DeadEnds[edgeId] = 1
 
-		# Extend Edge 
+		# Extend Edge
 
 		newNodeId = 0
 
@@ -2032,7 +2032,7 @@ class RoadGraphCombiner:
 					pn2lon = RoadGraphA.nodes[pn2][1]
 
 
-					pn3 = -1 
+					pn3 = -1
 					pn0 = -1
 
 					for next_node in RoadGraphA.nodeLink[pn2]:
@@ -2123,7 +2123,7 @@ class RoadGraphCombiner:
 					pn2lat = RoadGraphA.nodes[pn2][0]
 					pn2lon = RoadGraphA.nodes[pn2][1]
 
-					pn3 = -1 
+					pn3 = -1
 					pn0 = -1
 
 					for next_node in RoadGraphA.nodeLink[pn2]:
@@ -2181,7 +2181,7 @@ class RoadGraphCombiner:
 
 				# 	newNodeId += 1
 
-		# Add GraphB to GraphA 
+		# Add GraphB to GraphA
 		for edgeId, edge in RoadGraphB.edges.iteritems():
 			n1 = edge[0]
 			n2 = edge[1]
@@ -2197,7 +2197,7 @@ class RoadGraphCombiner:
 		pass
 
 	def ConnectivityChecker(self, lat1, lon1, lat2, lon2, lat3, lon3,  radius = 0.00005):
-		#TODO check speed?  
+		#TODO check speed?
 
 		data = [lat1, lon1, 0.00030, 0.2, lat2, lon2, 0.00030, 0.2, lat3, lon3, 0.00030, 0.2]
 
@@ -2291,7 +2291,7 @@ class RoadGraphCombiner:
 				continue
 
 			if (loc[0] - ilat) * (loc[0] - ilat) + (loc[1] - ilon) * (loc[1] - ilon) > l * l :
-				continue 
+				continue
 
 			if img[loc[0], loc[1]] == 0:
 				continue
@@ -2327,7 +2327,7 @@ def CheckParallelSegments(s1, s2, lat_res, lon_res, image_size=512, folder = "",
 
 	m,ok= md.GetMapInRect(range_minlat, range_minlon, range_maxlat, range_maxlon , folder = folder, start_lat = start_lat, start_lon = start_lon, resolution = resolution, padding = padding, zoom = zoom, scale = scale)
 	m1 = scipy.misc.imresize(m.astype(np.uint8),(image_size, image_size), mode="RGB")
-	
+
 	seg_img = np.zeros((image_size, image_size),np.uint8)
 	seg_cv = cv.fromarray(seg_img)
 
@@ -2340,7 +2340,7 @@ def CheckParallelSegments(s1, s2, lat_res, lon_res, image_size=512, folder = "",
 	s3_lon_i = int((s2[0][1] - range_minlon) / lon_res)
 	s4_lat_i = int((s2[1][0] - range_minlat) / lat_res)
 	s4_lon_i = int((s2[1][1] - range_minlon) / lon_res)
-	
+
 	cv.Line(seg_cv, (s1_lon_i, s1_lat_i), (s2_lon_i, s2_lat_i), (255), 1, cv.CV_AA)
 	cv.Line(seg_cv, (s3_lon_i, s3_lat_i), (s4_lon_i, s4_lat_i), (255), 1, cv.CV_AA)
 
@@ -2381,7 +2381,7 @@ def CheckParallelSegments(s1, s2, lat_res, lon_res, image_size=512, folder = "",
 
 if __name__ == "__main__":
 	data = [42.355538, -71.083505, 0.00030, float(sys.argv[1]), 42.352176, -71.081198, 0.00030, float(sys.argv[1]), 42.352176, -71.081198, 0.00030, float(sys.argv[1])]
-	
+
 	s = SpeedQueryBatch(data, port = 8020)
 	print(s)
 	speed = s[0] + 0.0000001

@@ -5,10 +5,10 @@ from scipy.ndimage.filters import gaussian_filter
 
 
 import socket
-from PIL import Image
+#from PIL import Image
 import sys,os
 
-import StringIO
+from io import StringIO
 
 
 def getGPSHistogram(lat2, lon2, lat1, lon1, lat0, lon0, radius, img_size, region, host="localhost", port=8002, center_lat = None, center_lon = None, filename = "tmp.png"):
@@ -32,9 +32,9 @@ def getGPSHistogram(lat2, lon2, lat1, lon1, lat0, lon0, radius, img_size, region
 	#print(data_string)
 	s.send(data_string)
 	num_str = s.recv(16384)
- 	num = int(num_str.split(' ')[1])
+	num = int(num_str.split(' ')[1])
 
- 	#print(num_str)
+	#print(num_str)
 	s.send("ok")
 
 	result = ""
@@ -81,7 +81,7 @@ def mergeDetector(path1, path2, port=8002):
 	m2 = np.amax(blurred2)
 
 	if m1 != 0:
-		blurred1 /= m1 
+		blurred1 /= m1
 
 	if m2 != 0:
 		blurred2 /= m2
@@ -99,15 +99,3 @@ def mergeDetector(path1, path2, port=8002):
 	#print(sum_diff, sum_2, 1.0 - sum_diff/sum_2)
 
 	return 1.0 - sum_diff/sum_2
-
-
-
-
-
-
-
-
-
-
-
-
