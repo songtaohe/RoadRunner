@@ -6,14 +6,14 @@ import sys
 import scipy.ndimage
 import scipy.ndimage as nd
 import scipy.misc
-from PIL import Image
+#from PIL import Image
 #from RoadExploreCNN import CNNOutput
 from time import time
 import json
 import PathSimilarity
 from rtree import index
-from sklearn.mixture import GMM
-import RoadGraph as splfy # splfy is some old name ... 
+from sklearn.mixture import GaussianMixture
+import RoadGraph as splfy # splfy is some old name ...
 import MergeDetector
 import inspect
 import random
@@ -49,14 +49,14 @@ def DirectionClustering(direction_list, tolerance=4, m = 72):
 			else:
 				break
 
-		j = i-1 
+		j = i-1
 
 		if i == 0:
 			while j != i :
 				if j < 0:
-					j = j + m 
+					j = j + m
 
-				jj = (jj + 1) % m 
+				jj = (jj + 1) % m
 
 				if abs(direction_list[j],direction_list[jj]) <= tolerance:
 					assignment[j] = label
@@ -67,7 +67,7 @@ def DirectionClustering(direction_list, tolerance=4, m = 72):
 		label = label + 1
 
 
-	clusters = [[]] * label 
+	clusters = [[]] * label
 
 	for ind in xrange(len(assignment)):
 		clusters[assignment[ind]].append(direction_list[ind])
@@ -106,13 +106,14 @@ def TraceQueryBatch3P(data, host="localhost", port=8002):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.connect((host, port))
 	data_string = ""
-	for i in range(len(data)/11):
+	for i in range(int(len(data)/11)):
 		data_string = data_string + str(data[i*11+0])+","+str(data[i*11+1])+","+str(data[i*11+2])+","+str(data[i*11+3])+","+str(data[i*11+4])+","+str(data[i*11+5])+","+str(data[i*11+6])+","+str(data[i*11+7])+","+str(data[i*11+8])+","+str(data[i*11+9])+","+str(data[i*11+10])+","
 		#data_string = data_string + str(data[i*11+0])+","+str(data[i*11+1])+","+str(data[i*11+2])+","+str(data[i*11+3])+","+str(data[i*11+4])+","+str(data[i*11+5])+","+str(data[i*11+6])+","+str(data[i*11+7])+","+str(data[i*11+8])+",-1,-1,"
 
 
 	#print("DataSentLen", len(data_string))
 	ts2 = time()
+	data_string = bytes(data_string, encoding='utf-8')
 	s.send(data_string)
 	result = s.recv(16384)
 	ts3 = time()
@@ -122,7 +123,7 @@ def TraceQueryBatch3P(data, host="localhost", port=8002):
 
 	t = time() - ts1
 
-	print(t, ts2-ts1, ts3-ts2) 
+	print(t, ts2-ts1, ts3-ts2)
 
 	return result
 
@@ -140,6 +141,7 @@ def TraceQueryNodeScores(data, host="localhost", port=8002):
 
 	#print("DataSentLen", len(data_string))
 	ts2 = time()
+	data_string = bytes(data_string, encoding='utf-8')
 	s.send(data_string)
 	result = s.recv(16384)
 	ts3 = time()
@@ -149,7 +151,7 @@ def TraceQueryNodeScores(data, host="localhost", port=8002):
 
 	t = time() - ts1
 
-	print(t, ts2-ts1, ts3-ts2) 
+	print(t, ts2-ts1, ts3-ts2)
 
 	return result
 
@@ -213,12 +215,14 @@ def RawSimilarity(traceA, traceB):
 
 
 DegreeResolution = 5
+DegreeConvert = int(360/DegreeResolution)
 #StepSize = 0.00025 # 15 meters
+global StepSize
 StepSize = 0.00015 # 15 meters
 #StepSize = 0.00025 # 15 meters
 QueryRange = 0.00003 # 2 meters
 
-DBDCheckRange = 35 # default is 20 
+DBDCheckRange = 35 # default is 20
 DBDExclusionRange = 10 # 10 is good
 
 
@@ -237,9 +241,9 @@ def pointToLineDistance(p1,p2,p3):
 	# p1 --> p2 is the line
 	# p1 is (0,0)
 
-	dist = np.sqrt(p2[0] * p2[0] + p2[1] * p2[1]) 
+	dist = np.sqrt(p2[0] * p2[0] + p2[1] * p2[1])
 
-	proj_length = (p2[0] * p3[0] + p2[1] * p3[1]) / dist 
+	proj_length = (p2[0] * p3[0] + p2[1] * p3[1]) / dist
 
 	if proj_length > dist :
 		a = p3[0] - p2[0]
@@ -301,7 +305,7 @@ def CommonRootCheck(traceA, traceB):
 def MergeChecker(traceA, traceB, r1 = 0.00005, r2 = 0.00005, r3 = 0.00005, d1 = -1, d2 = -1):
 	data = []
 
-	
+
 	n1 = 0
 	n2 = len(traceB) / 2 + 1
 	n3 = len(traceB) - 1
@@ -361,11 +365,11 @@ def InitNode(lat, lon, id, parent, children, parentDIR):
 	d['lon'] = lon
 	d['parent'] = parent
 	d['children'] = children
-	d['score'] = [0]*(360/DegreeResolution)
-	d['rawScore'] = [0]*(360/DegreeResolution)
-	d['rawScoreStepsize1'] = [0]*(360/DegreeResolution)
-	d['rawScoreStepsize2'] = [0]*(360/DegreeResolution)
-	d['rawScoreLongRange'] = [0]*(360/DegreeResolution)
+	d['score'] = [0]*(DegreeConvert)
+	d['rawScore'] = [0]*(DegreeConvert)
+	d['rawScoreStepsize1'] = [0]*(DegreeConvert)
+	d['rawScoreStepsize2'] = [0]*(DegreeConvert)
+	d['rawScoreLongRange'] = [0]*(DegreeConvert)
 	d['rawScoreHorizontal'] = [0]*(DBDCheckRange*2+1)
 	d['rawScoreHorizontalLoc'] = []
 	d['rawScoreHorizontalGMM'] = []
@@ -403,12 +407,8 @@ def InitNode(lat, lon, id, parent, children, parentDIR):
 
 
 	d['needRevisit'] = False
-	d['exploredDirections'] = []  # Should be removed, this is similar to OutNodes. 
-
-
-
-
- 	return d
+	d['exploredDirections'] = []  # Should be removed, this is similar to OutNodes.
+	return d
 
 
 
@@ -426,7 +426,7 @@ class RoadTree:
 		self.deferredLinks_depth = 0
 		self.maxBFSDepth = 0
 
-		self.config = config 
+		self.config = config
 
 		self.mCNNOutput = mCNNOutput
 		self.forestIdx = 0
@@ -443,13 +443,13 @@ class RoadTree:
 				score[ind] = math.log(score[ind]+0.00000001)
 			else:
 				score[ind] = -1000
-		return score 
+		return score
 
 	def node2nodeScore(self, nodeA, nodeB): # A->B
-		score = [1]*(360/DegreeResolution)
+		score = [1]*(DegreeConvert)
 		batch_size = 36
 
-		for i in range(360/DegreeResolution/batch_size):
+		for i in range(DegreeConvert/batch_size):
 			data = []
 			for j in range(batch_size):
 				degree = (i*batch_size+j) * DegreeResolution
@@ -459,10 +459,10 @@ class RoadTree:
 				data.append(nodeB['lon']+math.cos(math.radians(degree))*StepSize / math.cos(math.radians(nodeB['lat'])))
 				data.append(QueryRange)
 
-			
+
 			result = TraceQueryBatch(data)
 
-		
+
 		# This function is discarded
 		# move the activation function out of this function
 
@@ -477,13 +477,13 @@ class RoadTree:
 
 
 
-		#return result 
+		#return result
 
 		return score
 
 	def nodeScoreWithPath(self, path):
 		# path[i] =  (lat,lon,radius,distance)
-		# path[0]'s distance is the radius of the circle. 
+		# path[0]'s distance is the radius of the circle.
 
 
 
@@ -500,10 +500,10 @@ class RoadTree:
 
 
 	def node3Score(self, nodeA, nodeB, nodeC, r1=QueryRange,r2=QueryRange,r3=QueryRange, stepSize=StepSize, d1 = -1, d2 = -1): # A->B->C
-		score = [1]*(360/DegreeResolution)
-		batch_size = 72 
+		score = [1]*(DegreeConvert)
+		batch_size = 72
 
-		for i in range(360/DegreeResolution/batch_size):
+		for i in range(DegreeConvert/batch_size):
 			data = []
 			for j in range(batch_size):
 				degree = (i*batch_size+j) * DegreeResolution
@@ -519,14 +519,14 @@ class RoadTree:
 
 				data.append(d1)
 				data.append(d2)
-			
-			result = TraceQueryBatch3P(data)
-		
 
-		#return result 
+			result = TraceQueryBatch3P(data)
+
+
+		#return result
 
 		# move the activation function out of this function
-		
+
 
 			for j in range(batch_size):
 				#score[i*batch_size+j] = math.log(result[j*5+3]+result[j*5+4]+1)
@@ -542,10 +542,10 @@ class RoadTree:
 		return score
 
 	def node3ScoreWithRange(self, nodeA, nodeB, nodeC, r1=QueryRange,r2=QueryRange,r3=QueryRange, d1 = -1, d2 = -1, stepSize=StepSize, DegreeResolution = DegreeResolution, center = 0, size = 16): # A->B->C
-		score = [1]*int(360/DegreeResolution)
-		batch_size = 72 
+		score = [1]*int(DegreeConvert)
+		batch_size = 72
 
-		n = int(360/DegreeResolution)
+		n = int(DegreeConvert)
 
 		data = []
 		for i in range(-size, size):
@@ -566,10 +566,10 @@ class RoadTree:
 
 		result = TraceQueryBatch3P(data)
 
-		return result 
+		return result
 
 		# move the activation function out of this function
-		
+
 
 
 
@@ -605,10 +605,10 @@ class RoadTree:
 
 		result = TraceQueryBatch3P(data)
 
-		return result 
+		return result
 
 		# move the activation function out of this function
-		
+
 
 		for j in range(size*2+1):
 			if result[j] >= self.config['minimal_number_of_trips']:
@@ -656,13 +656,13 @@ class RoadTree:
 
 			nodeC['rawScoreHorizontalLoc'].append((nodeC['lat']+math.sin(math.radians(degree2*DegreeResolution))*stepSize*i, nodeC['lon']+math.cos(math.radians(degree2*DegreeResolution))*stepSize*i / math.cos(math.radians(nodeB['lat']))))
 
-		
 
 
-		
+
+
 
 		# move the activation function out of this function
-		
+
 
 
 
@@ -676,7 +676,7 @@ class RoadTree:
 
 		result = TraceQueryBatch3P(data)
 
-		#return result 
+		#return result
 
 
 
@@ -695,7 +695,7 @@ class RoadTree:
 			if p == nodeB:
 				return True
 			p = self.nodes[p]['parent']
-			
+
 
 		if p == nodeB:
 				return True
@@ -740,18 +740,18 @@ class RoadTree:
 			r = r + i * 0.00001
 
 			r2 = r
-			# Modified the r3 from 0.00003 to 0.00005 
+			# Modified the r3 from 0.00003 to 0.00005
 			new_score = self.node3Score(self.nodes[node_list[n3]], self.nodes[node_list[n2]],self.nodes[node_list[n1]], r1=r, r2=r,r3=0.00005)
 
-			for j in range(360/DegreeResolution):
-		 		#self.nodes[nodeID]['score'][j] = self.nodes[nodeID]['score'][j] + new_score[j]
-		 		self.nodes[nodeID]['rawScore'][j] = self.nodes[nodeID]['rawScore'][j] + new_score[j]
+			for j in range(DegreeConvert):
+				#self.nodes[nodeID]['score'][j] = self.nodes[nodeID]['score'][j] + new_score[j]
+				self.nodes[nodeID]['rawScore'][j] = self.nodes[nodeID]['rawScore'][j] + new_score[j]
 
 
-		for j in range(360/DegreeResolution):
-		 	self.nodes[nodeID]['score'][j] = self.nodes[nodeID]['rawScore'][j]
+		for j in range(DegreeConvert):
+			self.nodes[nodeID]['score'][j] = self.nodes[nodeID]['rawScore'][j]
 
-		 	self.nodes[nodeID]['rawScoreMax'] = max(self.nodes[nodeID]['rawScoreMax'], self.nodes[nodeID]['rawScore'][j])
+			self.nodes[nodeID]['rawScoreMax'] = max(self.nodes[nodeID]['rawScoreMax'], self.nodes[nodeID]['rawScore'][j])
 
 		if self.mCNNOutput != None :
 			_,cnnSoft = self.mCNNOutput.checkPixel(self.nodes[nodeID]['lat'],self.nodes[nodeID]['lon'])
@@ -761,40 +761,40 @@ class RoadTree:
 
 
 		# Add Gaussian Blur
-		tmp_score = [0] * (360/DegreeResolution)
+		tmp_score = [0] * (DegreeConvert)
 		gaussian_kernel = [0.071303, 0.131514,0.189879,0.214607,0.189879,0.131514,0.071303]
 		kernel_size = len(gaussian_kernel)
 
-		for j in range(360/DegreeResolution):
-		 	#self.nodes[nodeID]['score'][j] = self.nodes[nodeID]['score'][j] + new_score[j]
-		 	if self.nodes[nodeID]['rawScore'][j] < 0:
-		 		 self.nodes[nodeID]['rawScore'][j] = 0
+		for j in range(DegreeConvert):
+			#self.nodes[nodeID]['score'][j] = self.nodes[nodeID]['score'][j] + new_score[j]
+			if self.nodes[nodeID]['rawScore'][j] < 0:
+				 self.nodes[nodeID]['rawScore'][j] = 0
 
-		 	tmp_score[j] = self.nodes[nodeID]['rawScore'][j]
-
-
-
-
-		for j in range(360/DegreeResolution):
-		 	if self.nodes[nodeID]['rawScore'][j] > 0 :
-		 		s = 0
-		 		for i in range(kernel_size/2):
-		 			if tmp_score[(j + i + 1 + 360/DegreeResolution) % (360/DegreeResolution)] > 0:
-		 				s = s + tmp_score[(j + i + 1+ 360/DegreeResolution) % (360/DegreeResolution)] * gaussian_kernel[i + kernel_size/2 + 1]
-		 			else:
-		 				break
-
-		 		for i in range(kernel_size/2):
-		 			if tmp_score[(j - i - 1 + 360/DegreeResolution) % (360/DegreeResolution)] > 0:
-		 				s = s + tmp_score[(j - i - 1 + 360/DegreeResolution) % (360/DegreeResolution)] * gaussian_kernel[kernel_size/2 - i -1]
-		 			else:
-		 				break
-
-		 		s = s + tmp_score[j] * gaussian_kernel[kernel_size/2]
+			tmp_score[j] = self.nodes[nodeID]['rawScore'][j]
 
 
 
-		 		self.nodes[nodeID]['rawScore'][j] = s
+
+		for j in range(DegreeConvert):
+			if self.nodes[nodeID]['rawScore'][j] > 0 :
+				s = 0
+				for i in range(kernel_size/2):
+					if tmp_score[(j + i + 1 + DegreeConvert) % (DegreeConvert)] > 0:
+						s = s + tmp_score[(j + i + 1+ DegreeConvert) % (DegreeConvert)] * gaussian_kernel[i + kernel_size/2 + 1]
+					else:
+						break
+
+				for i in range(kernel_size/2):
+					if tmp_score[(j - i - 1 + DegreeConvert) % (DegreeConvert)] > 0:
+						s = s + tmp_score[(j - i - 1 + DegreeConvert) % (DegreeConvert)] * gaussian_kernel[kernel_size/2 - i -1]
+					else:
+						break
+
+				s = s + tmp_score[j] * gaussian_kernel[kernel_size/2]
+
+
+
+				self.nodes[nodeID]['rawScore'][j] = s
 
 
 
@@ -806,38 +806,38 @@ class RoadTree:
 
 
 	def _addGaussianBlurCircular(self, nodeID, itemname = 'rawScore'):
-		tmp_score = [0] * (360/DegreeResolution)
+		tmp_score = [0] * (DegreeConvert)
 		gaussian_kernel = [0.071303, 0.131514,0.189879,0.214607,0.189879,0.131514,0.071303]
 		kernel_size = len(gaussian_kernel)
 
-		for j in range(360/DegreeResolution):
-		 	#self.nodes[nodeID]['score'][j] = self.nodes[nodeID]['score'][j] + new_score[j]
-		 	if self.nodes[nodeID][itemname][j] < 0:
-		 		 self.nodes[nodeID][itemname][j] = 0
+		for j in range(DegreeConvert):
+			#self.nodes[nodeID]['score'][j] = self.nodes[nodeID]['score'][j] + new_score[j]
+			if self.nodes[nodeID][itemname][j] < 0:
+				 self.nodes[nodeID][itemname][j] = 0
 
-		 	tmp_score[j] = self.nodes[nodeID][itemname][j]
-
-
-		for j in range(360/DegreeResolution):
-		 	if self.nodes[nodeID][itemname][j] > 0 :
-		 		s = 0
-		 		for i in range(kernel_size/2):
-		 			if tmp_score[(j + i + 1 + 360/DegreeResolution) % (360/DegreeResolution)] > 0:
-		 				s = s + tmp_score[(j + i + 1+ 360/DegreeResolution) % (360/DegreeResolution)] * gaussian_kernel[i + kernel_size/2 + 1]
-		 			else:
-		 				break
-
-		 		for i in range(kernel_size/2):
-		 			if tmp_score[(j - i - 1 + 360/DegreeResolution) % (360/DegreeResolution)] > 0:
-		 				s = s + tmp_score[(j - i - 1 + 360/DegreeResolution) % (360/DegreeResolution)] * gaussian_kernel[kernel_size/2 - i -1]
-		 			else:
-		 				break
-
-		 		s = s + tmp_score[j] * gaussian_kernel[kernel_size/2]
+			tmp_score[j] = self.nodes[nodeID][itemname][j]
 
 
+		for j in range(DegreeConvert):
+			if self.nodes[nodeID][itemname][j] > 0 :
+				s = 0
+				for i in range(kernel_size/2):
+					if tmp_score[(j + i + 1 + DegreeConvert) % (DegreeConvert)] > 0:
+						s = s + tmp_score[(j + i + 1+ DegreeConvert) % (DegreeConvert)] * gaussian_kernel[i + kernel_size/2 + 1]
+					else:
+						break
 
-		 		self.nodes[nodeID][itemname][j] = s
+				for i in range(kernel_size/2):
+					if tmp_score[(j - i - 1 + DegreeConvert) % (DegreeConvert)] > 0:
+						s = s + tmp_score[(j - i - 1 + DegreeConvert) % (DegreeConvert)] * gaussian_kernel[kernel_size/2 - i -1]
+					else:
+						break
+
+				s = s + tmp_score[j] * gaussian_kernel[kernel_size/2]
+
+
+
+				self.nodes[nodeID][itemname][j] = s
 
 
 
@@ -865,7 +865,7 @@ class RoadTree:
 						d = abs(p1-p2)
 
 					if d < d_peak :
-						d_peak = d 
+						d_peak = d
 
 
 			if d_peak > 4:
@@ -879,7 +879,7 @@ class RoadTree:
 		print("--- Gaussian Blur Iteration ", counter+1, d_peak, peaks)
 
 
-			
+
 
 
 
@@ -890,43 +890,43 @@ class RoadTree:
 		gaussian_kernel = [0.071303, 0.131514,0.189879,0.214607,0.189879,0.131514,0.071303]
 		kernel_size = len(gaussian_kernel)
 
-		
-		for j in range(n):
-		 	#self.nodes[nodeID]['score'][j] = self.nodes[nodeID]['score'][j] + new_score[j]
-		 	if self.nodes[nodeID][itemname][j] < 0:
-		 		 self.nodes[nodeID][itemname][j] = 0
-
-		 	tmp_score[j] = self.nodes[nodeID][itemname][j]
-
 
 		for j in range(n):
-		 	if self.nodes[nodeID][itemname][j] > 0 :
-		 		s = 0
-		 		for i in range(kernel_size/2):
-		 			if tmp_score[(j + i + 1 + n) % n] > 0 and j + i + 1 < n:
-		 				s = s + tmp_score[(j + i + 1 + n) % n] * gaussian_kernel[i + kernel_size/2 + 1]
-		 			else:
-		 				break
+			#self.nodes[nodeID]['score'][j] = self.nodes[nodeID]['score'][j] + new_score[j]
+			if self.nodes[nodeID][itemname][j] < 0:
+				 self.nodes[nodeID][itemname][j] = 0
 
-		 		for i in range(kernel_size/2):
-		 			if tmp_score[(j - i - 1 + n) % n] > 0 and j - i - 1 >= 0:
-		 				s = s + tmp_score[(j - i - 1 + n) % n] * gaussian_kernel[kernel_size/2 - i -1]
-		 			else:
-		 				break
-
-		 		s = s + tmp_score[j] * gaussian_kernel[kernel_size/2]
+			tmp_score[j] = self.nodes[nodeID][itemname][j]
 
 
+		for j in range(n):
+			if self.nodes[nodeID][itemname][j] > 0 :
+				s = 0
+				for i in range(kernel_size/2):
+					if tmp_score[(j + i + 1 + n) % n] > 0 and j + i + 1 < n:
+						s = s + tmp_score[(j + i + 1 + n) % n] * gaussian_kernel[i + kernel_size/2 + 1]
+					else:
+						break
 
-		 		self.nodes[nodeID][itemname][j] = s
+				for i in range(kernel_size/2):
+					if tmp_score[(j - i - 1 + n) % n] > 0 and j - i - 1 >= 0:
+						s = s + tmp_score[(j - i - 1 + n) % n] * gaussian_kernel[kernel_size/2 - i -1]
+					else:
+						break
+
+				s = s + tmp_score[j] * gaussian_kernel[kernel_size/2]
+
+
+
+				self.nodes[nodeID][itemname][j] = s
 
 	def numberOfPeaks(self, nodeID, itemname = 'rawScore', center = 0, r = 24):
 		n = 0
 		value = 0
 		for i in range(-r+1,r-1):
-			ind = (i + center + 360/DegreeResolution) % (360/DegreeResolution)
-			indp = (i + center + 1 + 360/DegreeResolution) % (360/DegreeResolution)
-			indn = (i + center - 1 + 360/DegreeResolution) % (360/DegreeResolution)
+			ind = (i + center + DegreeConvert) % (DegreeConvert)
+			indp = (i + center + 1 + DegreeConvert) % (DegreeConvert)
+			indn = (i + center - 1 + DegreeConvert) % (DegreeConvert)
 
 			if self.nodes[nodeID][itemname][ind] > self.nodes[nodeID][itemname][indp] and self.nodes[nodeID][itemname][indp] > 0 and self.nodes[nodeID][itemname][ind] > self.nodes[nodeID][itemname][indn] and self.nodes[nodeID][itemname][indn] > 0 :
 				n = n + 1
@@ -939,9 +939,9 @@ class RoadTree:
 		value = 0
 		peaks = []
 		for i in range(-r+1,r-1):
-			ind = (i + center + 360/DegreeResolution) % (360/DegreeResolution)
-			indp = (i + center + 1 + 360/DegreeResolution) % (360/DegreeResolution)
-			indn = (i + center - 1 + 360/DegreeResolution) % (360/DegreeResolution)
+			ind = (i + center + DegreeConvert) % (DegreeConvert)
+			indp = (i + center + 1 + DegreeConvert) % (DegreeConvert)
+			indn = (i + center - 1 + DegreeConvert) % (DegreeConvert)
 
 			if self.nodes[nodeID][itemname][ind] > self.nodes[nodeID][itemname][indp] and self.nodes[nodeID][itemname][indp] > 0 and self.nodes[nodeID][itemname][ind] > self.nodes[nodeID][itemname][indn] and self.nodes[nodeID][itemname][indn] > 0 :
 				n = n + 1
@@ -976,7 +976,7 @@ class RoadTree:
 
 		X = np.asarray(X).reshape(-1,1)
 
-		m = [GMM(i+1).fit(X) for i in range(3)]
+		m = [GaussianMixture(i+1).fit(X) for i in range(3)]
 		bic = [m[i].bic(X) for i in range(3)]
 
 		nPeak = bic.index(min(bic))
@@ -991,12 +991,12 @@ class RoadTree:
 
 		return peaks, covars, weight
 
-	# Need more test 
+	# Need more test
 	def getAllBackPaths(self, nodeID, depth, forest):
-		curID = nodeID 
+		curID = nodeID
 		result = []
 
-		
+
 		stack = [[self.forestIdx,nodeID,0]]
 
 		counter = 0
@@ -1007,30 +1007,30 @@ class RoadTree:
 			cur_ind = stack[-1][2]
 
 			tree = forest[tree_id]
-			
+
 			if cur_ind < len(tree.nodes[cur_id]['InNodes']):
 				if counter == depth:
 					result.append([(item[0],item[1]) for item in stack])
 					stack.pop(len(stack)-1)
-					counter = counter - 1 
+					counter = counter - 1
 				else:
 					stack[-1][2] += 1
 					stack.append([tree.nodes[cur_id]['InNodes'][cur_ind][0], tree.nodes[cur_id]['InNodes'][cur_ind][1], 0])
-					counter = counter + 1 
+					counter = counter + 1
 
 			else:
 				stack.pop(len(stack)-1)
 				counter = counter - 1
-		return result 
+		return result
 
 
 
 
 
 
-	# 
+	#
 	def updateScoreMultipleStepSize(self, nodeID, multiPath = False):
-		# d['AllBackPaths'] 
+		# d['AllBackPaths']
 
 		parentId = nodeID
 		#self.nodes[nodeID]['score'] = self.node2nodeScore(self.nodes[nodeID],self.nodes[nodeID])
@@ -1057,9 +1057,9 @@ class RoadTree:
 
 
 
-		for j in range(360/DegreeResolution):
-	 		#self.nodes[nodeID]['score'][j] = self.nodes[nodeID]['score'][j] + new_score[j]
-	 		self.nodes[nodeID]['rawScore'][j] = 0
+		for j in range(DegreeConvert):
+			#self.nodes[nodeID]['score'][j] = self.nodes[nodeID]['score'][j] + new_score[j]
+			self.nodes[nodeID]['rawScore'][j] = 0
 
 
 		for path in paths:
@@ -1068,7 +1068,7 @@ class RoadTree:
 			# Also, the default 'InNodes' should be (self.forestIdx, 0)  (itself)
 			# 20180119
 			dist_list = [0]
-			node_list = path 
+			node_list = path
 
 			isLocalPath  =  True
 
@@ -1094,40 +1094,40 @@ class RoadTree:
 			if isLocalPath  == True:
 				#for i in range(8,9):
 				for i in range(3):
-					
+
 					n1 = 0
 					n2 = 12 # 90 meter
 					n3 = 18 # 135 meter
 					n4 = 24 # 180 meter
-					n5 = 29 # 225 meter 
+					n5 = 29 # 225 meter
 
 					r = 0.00010
 
-					
+
 					if i == 0 :
 						new_score1 = self.node3ScoreHorizontalVStyle(self.nodes[node_list[n3][1]], self.nodes[node_list[n2][1]],self.nodes[node_list[n1][1]], r1=r, r2=r,r3=0.00002, d1 = dist_list[n3] - dist_list[n2], d2 = dist_list[n2] - dist_list[n1],  stepSize = 0.000015, DegreeResolution = 5, degree1 = (direction+24) % 72, degree2 = (direction-24 + 72) % 72, size=DBDCheckRange)
-					
+
 					elif i == 1:
 						new_score1 = self.node3ScoreHorizontalVStyle(self.nodes[node_list[n4][1]], self.nodes[node_list[n3][1]],self.nodes[node_list[n1][1]], r1=r, r2=r,r3=0.00002, d1 = dist_list[n4] - dist_list[n3], d2 = dist_list[n3] - dist_list[n1],  stepSize = 0.000015, DegreeResolution = 5, degree1 = (direction+24) % 72, degree2 = (direction-24 + 72) % 72, size=DBDCheckRange)
-						
+
 					elif i == 2:
 						new_score1 = self.node3ScoreHorizontalVStyle(self.nodes[node_list[n5][1]], self.nodes[node_list[n3][1]],self.nodes[node_list[n1][1]], r1=r, r2=r,r3=0.00002, d1 = dist_list[n5] - dist_list[n3], d2 = dist_list[n3] - dist_list[n1],  stepSize = 0.000015, DegreeResolution = 5, degree1 = (direction+24) % 72, degree2 = (direction-24 + 72) % 72, size=DBDCheckRange)
 
 
 					for j in range(DBDCheckRange*2+1):
 						self.nodes[nodeID]['rawScoreHorizontal'][j] += new_score1[j]
-					
+
 
 
 					self.nodes[nodeID]['deferredLinksInfo'] = [node_list[n2][1], node_list[n3][1], r, r, node_list[n4][1], dist_list[n3] - dist_list[n2], dist_list[n2] - dist_list[n1]]
-					
+
 
 
 
 				for j in range(DBDCheckRange*2+1):
 						self.nodes[nodeID]['rawScoreHorizontal'][j] /= 3
 
-					
+
 
 				self.addGaussianBlurNonCircular(nodeID, 'rawScoreHorizontal')
 
@@ -1155,7 +1155,7 @@ class RoadTree:
 						widthOfRoad  += 1
 					else:
 						break
-						
+
 				widthOfRoad = (widthOfRoad - 1) * 0.000015
 
 				self.nodes[nodeID]['radius'] = min(0.000125, max(0.00005, widthOfRoad/2))
@@ -1166,7 +1166,7 @@ class RoadTree:
 			n2 = 0
 			n3 = 1
 
-			
+
 			query_data = []
 
 			def getNode(k):
@@ -1177,7 +1177,7 @@ class RoadTree:
 			last_node_ind = 0
 
 
-			
+
 
 			for noise_radius in [0.00005, 0.00007, 0.00009, 0.00011, 0.00013, 0.00015]:
 				query_data = []
@@ -1189,9 +1189,9 @@ class RoadTree:
 					else:
 						d = dist_list[i] - dist_list[last_node_ind]
 
-					
-					r = 0.00005+i*0.00001 
-					# Change this to a smaller value, focus on the precision 
+
+					r = 0.00005+i*0.00001
+					# Change this to a smaller value, focus on the precision
 					r = noise_radius
 
 					#getNode(node_list[i])['noiseradius'] = max(r, getNode(node_list[i])['noiseradius'])
@@ -1199,7 +1199,7 @@ class RoadTree:
 					r2 = max(getNode(node_list[i])['radius'],r)
 					#r3 = max(getNode(node_list[(i+1)*2])['radius'],r)
 
-					# make sure the circle don't overlap 
+					# make sure the circle don't overlap
 
 					print(i,r2,d,last_node_ind)
 
@@ -1222,18 +1222,18 @@ class RoadTree:
 
 					#query_data.append([getNode(node_list[i*2])['lat'],getNode(node_list[i*2])['lon'], 0.00005+i*0.00001, d])
 					query_data.append([getNode(node_list[i])['lat'],getNode(node_list[i])['lon'], r2, d])
-					last_node_ind = i 
+					last_node_ind = i
 
 				print(query_data)
 
 				new_score = self.nodeScoreWithPath(query_data)
 
-				isAllZero = True 
-				for ind in xrange(len(new_score)):
+				isAllZero = True
+				for ind in range(len(new_score)):
 					if new_score[ind] > 0 and new_score[(ind+1)%len(new_score)]>0 and new_score[(ind+2)%len(new_score)]>0:
 						isAllZero = False
 						break
-				
+
 
 				if isAllZero == False:
 					for i in range(self.config['history_length']*2+1):
@@ -1243,54 +1243,54 @@ class RoadTree:
 
 					break
 
-			for j in range(360/DegreeResolution):
-		 		#self.nodes[nodeID]['score'][j] = self.nodes[nodeID]['score'][j] + new_score[j]
-		 		self.nodes[nodeID]['rawScore'][j] += new_score[j]
+			for j in range(DegreeConvert):
+				#self.nodes[nodeID]['score'][j] = self.nodes[nodeID]['score'][j] + new_score[j]
+				self.nodes[nodeID]['rawScore'][j] += new_score[j]
 
 
-		for j in range(360/DegreeResolution):
+		for j in range(DegreeConvert):
 			self.nodes[nodeID]['rawScore'][j] += random.random()*0.00001
 
-		for j in range(360/DegreeResolution):
-		 	self.nodes[nodeID]['score'][j] = self.nodes[nodeID]['rawScore'][j]
-		 	self.nodes[nodeID]['rawScoreMax'] = max(self.nodes[nodeID]['rawScoreMax'], self.nodes[nodeID]['rawScore'][j])
+		for j in range(DegreeConvert):
+			self.nodes[nodeID]['score'][j] = self.nodes[nodeID]['rawScore'][j]
+			self.nodes[nodeID]['rawScoreMax'] = max(self.nodes[nodeID]['rawScoreMax'], self.nodes[nodeID]['rawScore'][j])
 
 		self.nodes[nodeID]['CNNCheckResult'] = None
 
 
 		# Add Gaussian Blur
-		tmp_score = [0] * (360/DegreeResolution)
+		tmp_score = [0] * (DegreeConvert)
 		gaussian_kernel = [0.071303, 0.131514,0.189879,0.214607,0.189879,0.131514,0.071303]
 		kernel_size = len(gaussian_kernel)
 
-		for j in range(360/DegreeResolution):
-		 	#self.nodes[nodeID]['score'][j] = self.nodes[nodeID]['score'][j] + new_score[j]
-		 	if self.nodes[nodeID]['rawScore'][j] < 0:
-		 		 self.nodes[nodeID]['rawScore'][j] = 0
+		for j in range(DegreeConvert):
+			#self.nodes[nodeID]['score'][j] = self.nodes[nodeID]['score'][j] + new_score[j]
+			if self.nodes[nodeID]['rawScore'][j] < 0:
+				 self.nodes[nodeID]['rawScore'][j] = 0
 
-		 	tmp_score[j] = self.nodes[nodeID]['rawScore'][j]
-
-
-		for j in range(360/DegreeResolution):
-		 	if self.nodes[nodeID]['rawScore'][j] > 0 :
-		 		s = 0
-		 		for i in range(kernel_size/2):
-		 			if tmp_score[(j + i + 1 + 360/DegreeResolution) % (360/DegreeResolution)] > 0:
-		 				s = s + tmp_score[(j + i + 1+ 360/DegreeResolution) % (360/DegreeResolution)] * gaussian_kernel[i + kernel_size/2 + 1]
-		 			else:
-		 				break
-
-		 		for i in range(kernel_size/2):
-		 			if tmp_score[(j - i - 1 + 360/DegreeResolution) % (360/DegreeResolution)] > 0:
-		 				s = s + tmp_score[(j - i - 1 + 360/DegreeResolution) % (360/DegreeResolution)] * gaussian_kernel[kernel_size/2 - i -1]
-		 			else:
-		 				break
-
-		 		s = s + tmp_score[j] * gaussian_kernel[kernel_size/2]
+			tmp_score[j] = self.nodes[nodeID]['rawScore'][j]
 
 
+		for j in range(DegreeConvert):
+			if self.nodes[nodeID]['rawScore'][j] > 0 :
+				s = 0
+				for i in range(kernel_size/2):
+					if tmp_score[(j + i + 1 + DegreeConvert) % (DegreeConvert)] > 0:
+						s = s + tmp_score[(j + i + 1+ DegreeConvert) % (DegreeConvert)] * gaussian_kernel[i + kernel_size/2 + 1]
+					else:
+						break
 
-		 		self.nodes[nodeID]['rawScore'][j] = s
+				for i in range(kernel_size/2):
+					if tmp_score[(j - i - 1 + DegreeConvert) % (DegreeConvert)] > 0:
+						s = s + tmp_score[(j - i - 1 + DegreeConvert) % (DegreeConvert)] * gaussian_kernel[kernel_size/2 - i -1]
+					else:
+						break
+
+				s = s + tmp_score[j] * gaussian_kernel[kernel_size/2]
+
+
+
+				self.nodes[nodeID]['rawScore'][j] = s
 
 
 		pass
@@ -1298,8 +1298,8 @@ class RoadTree:
 	def findCommonRoot(self, nodeID1, nodeID2, depth = 100):
 		parent1 = {}
 
-		cur_p = nodeID1 
-		counter  = 0 
+		cur_p = nodeID1
+		counter  = 0
 
 		while counter < depth :
 			if cur_p == 0 :
@@ -1313,7 +1313,7 @@ class RoadTree:
 
 
 		cur_p = nodeID2
-		counter  = 0 
+		counter  = 0
 
 		while counter < depth :
 			if cur_p == 0 :
@@ -1334,7 +1334,7 @@ class RoadTree:
 	def getPathBetweenTwoNodes(self, nodeID1, nodeID2, depth = 200):
 		result = []
 
-		cur_p = nodeID1 
+		cur_p = nodeID1
 		counter = 0
 		while True:
 
@@ -1386,13 +1386,13 @@ class RoadTree:
 			# print(sizex, sizey)
 			# print(nlat, nlon)
 			# print(lat, lon)
-			
+
 			# print(config['noise_image'][nlat][nlon])
 
 			# exit()
 
 			#if config['noise_image'][nlat][nlon][0] > 0 and config['noise_image'][nlat][nlon][3] > 0:
-			if config['noise_image'][nlat][nlon][0] > 10:	
+			if config['noise_image'][nlat][nlon][0] > 10:
 				return True
 
 		return False
@@ -1463,7 +1463,7 @@ class RoadTree:
 			if other.nodes[i]['referenceCounter'] == 0:
 				continue
 
-			# Don't merge to a aux node! 
+			# Don't merge to a aux node!
 			if other.nodes[i]['Aux'] == 1:
 				continue
 
@@ -1488,7 +1488,7 @@ class RoadTree:
 		result = -1
 
 
-	
+
 
 		heavy_noise = self.checkNoise(new_lat, new_lon)
 
@@ -1498,7 +1498,7 @@ class RoadTree:
 
 		#heavy_noise = False
 
-		if heavy_noise == True:  
+		if heavy_noise == True:
 			for k in allks: # do it super aggressively  (Evaluate ALL !!!)
 				if result != -1:
 					break
@@ -1518,7 +1518,7 @@ class RoadTree:
 				print("Terminate Check", s)
 
 
-			
+
 				if self == other and k == new_id:
 					s = 100
 
@@ -1531,8 +1531,8 @@ class RoadTree:
 
 				detectionType = 0
 
-				
-				if s < 0.00015 : # old is 0.00006 
+
+				if s < 0.00015 : # old is 0.00006
 					valid = MergeChecker(path1, path2)
 					result = k #### Test
 					pass
@@ -1573,15 +1573,15 @@ class RoadTree:
 
 		terminate_type = 0
 
-		#if k!=-1 and min_dist < 0.00025 : # 25 meters  # old one 
+		#if k!=-1 and min_dist < 0.00025 : # 25 meters  # old one
 		for k_ind in range(len(allks)): # do it aggressively
-			k = allks[k_ind] 
+			k = allks[k_ind]
 			dist = allds[k_ind]
 
-		
+
 
 			if result != -1:
-				continue 
+				continue
 
 			if dist > 0.00015:
 				continue
@@ -1590,7 +1590,7 @@ class RoadTree:
 			path1 = other.getPath(k,self.config['merge_detector_path_length'])
 			path2 = self.getPath(new_id,self.config['merge_detector_path_length'])
 
-			
+
 
 			#s = RawSimilarity(path1, path2)
 
@@ -1602,7 +1602,7 @@ class RoadTree:
 			print("Terminate Check", s)
 
 
-			
+
 
 			#print("Terminate Check", s)
 			if self == other and k == new_id:
@@ -1618,8 +1618,8 @@ class RoadTree:
 			detectionType = 0
 
 			global base_port
-			
-			if s < 0.00006 and s_max < 0.00015: # old is 0.00006 
+
+			if s < 0.00006 and s_max < 0.00015: # old is 0.00006
 				valid = MergeChecker(path1, path2)
 
 				if valid :
@@ -1665,7 +1665,7 @@ class RoadTree:
 			return flag
 
 		parent_id = link['node2']
-		
+
 
 		for i in range(len(link['shape'])/2 - 1):
 			lat1 = link['shape'][i*2]
@@ -1674,7 +1674,7 @@ class RoadTree:
 			lon2 = link['shape'][i*2+3]
 
 			new_id = len(self.nodes)
-			node = InitNode(lat2, lon2, new_id, parent_id, [],0) 
+			node = InitNode(lat2, lon2, new_id, parent_id, [],0)
 
 			node['InNodes'].append((-1, parent_id))
 			self.nodes[parent_id]['OutNodes'].append((-1, new_id, -1))
@@ -1730,7 +1730,7 @@ class RoadTree:
 
 		s = 1.0
 
-				
+
 
 		# !!! Config of NDE No Dead End
 		if self.config['keep_deadend'] == True:
@@ -1759,7 +1759,7 @@ class RoadTree:
 			new_lon = self.nodes[new_id]['lon']
 
 
-			if abs(new_lat-self.Region[0]) < 0.00025 or abs(new_lat-self.Region[2]) < 0.00025 or abs(new_lon-self.Region[1]) < 0.00040 or abs(new_lon-self.Region[3]) < 0.00040: 
+			if abs(new_lat-self.Region[0]) < 0.00025 or abs(new_lat-self.Region[2]) < 0.00025 or abs(new_lon-self.Region[1]) < 0.00040 or abs(new_lon-self.Region[3]) < 0.00040:
 				self.nodes[new_id]['OutRegion'] = 1
 
 		# if n2 > n1 :
@@ -1781,7 +1781,7 @@ class RoadTree:
 
 			# TODO Assign value to 'score'
 
-			for j in range(360/DegreeResolution):
+			for j in range(DegreeConvert):
 				if s == 1.0:
 					self.nodes[new_id]['score'][j] = self.nodes[new_id]['rawScore'][j]
 				if s == 0.8:
@@ -1793,7 +1793,7 @@ class RoadTree:
 
 		self.index_segment.insert(new_id, (min(self.nodes[new_id]['lat'], parent_lat), min(self.nodes[new_id]['lon'], parent_lon), max(self.nodes[new_id]['lat'], parent_lat), max(self.nodes[new_id]['lon'], parent_lon)))
 
-		# Check Deferred Links 
+		# Check Deferred Links
 		possible_links = list(self.index_deferredLinks.intersection((min(self.nodes[new_id]['lat'], parent_lat), min(self.nodes[new_id]['lon'], parent_lon), max(self.nodes[new_id]['lat'], parent_lat), max(self.nodes[new_id]['lon'], parent_lon))))
 
 		for linkid in possible_links :
@@ -1913,7 +1913,7 @@ class RoadTree:
 
 
 				last_depth = 0
-				last_links = self.nodes[self.nodes[new_id]['parent']]['refDeferredLinks'] 
+				last_links = self.nodes[self.nodes[new_id]['parent']]['refDeferredLinks']
 
 				if len(last_links) != 0:
 					last_depth = self.deferredLinks[last_links[0]]['triggerDepth'] + 2
@@ -1936,81 +1936,80 @@ class RoadTree:
 
 				self.deferredLinks.append(item)
 
-				
+
 				if flag == False:
 					self.index_deferredLinks.insert(peakID, (peaklat-0.00010, peaklon-0.00015, peaklat+0.00010, peaklon+0.00015))
 
-		
-		reverseDIR = (360/DegreeResolution/2 + _direction) % (360/DegreeResolution)
 
-		for i in range(360/DegreeResolution/3):
-			self.nodes[new_id]['score'][(reverseDIR+i-360/DegreeResolution/6) % (360/DegreeResolution)] = 0
+		reverseDIR = (DegreeConvert/2 + _direction) % (DegreeConvert)
+
+		for i in range(DegreeConvert/3):
+			self.nodes[new_id]['score'][(reverseDIR+i-DegreeConvert/6) % (DegreeConvert)] = 0
 
 
 		for bias in range(-1,2):
-			self.nodes[_parent]['score'][(_direction+bias) % (360/DegreeResolution)] = -1
+			self.nodes[_parent]['score'][(_direction+bias) % (DegreeConvert)] = -1
 
-		
+
 		forestIdx = 0
 
 		if Forest is None:
-			return 
+			return
 		for t in Forest:
 			terminate,terminate_type=self.findSimilarNode(new_id, t)
 			if terminate != -1:
-				for i in range(360/DegreeResolution):
+				for i in range(DegreeConvert):
 					if self.nodes[new_id]['score'][i] > t.nodes[terminate]['score'][i] and t.nodes[terminate]['score'][i] > -0.5:
 						t.nodes[terminate]['score'][i] = self.nodes[new_id]['score'][i]
-		 			self.nodes[new_id]['score'][i] = 0
+					self.nodes[new_id]['score'][i] = 0
 
-		 		self.nodes[new_id]['similarWith'] = [forestIdx, terminate]
-		 		self.nodes[new_id]['referenceCounter'] = 1
-		 		self.nodes[new_id]['terminateType'] = terminate_type
+				self.nodes[new_id]['similarWith'] = [forestIdx, terminate]
+				self.nodes[new_id]['referenceCounter'] = 1
+				self.nodes[new_id]['terminateType'] = terminate_type
 
-		 		self.nodes[new_id]['OutNodes'].append((forestIdx, terminate))
-		 		t.nodes[terminate]['InNodes'].append((self.forestIdx, new_id))
-
-
-		 		# Remove similar loop  Decide to remove this part, too complex
-		 		# Decide to add this part back
-		 		# The deffered branch detection can introduce a lot of loops...
-		 		# Maybe add something to focus only on deffered branch detection
-		 		# 
-
-		 		if t == self :
-			 		commonRoot = self.findCommonRoot(new_id, terminate, depth = 128)
-
-			 		if commonRoot != -1:
-
-				 		print(new_id, terminate, commonRoot)
-
-				 		path1 = self.getPathBetweenTwoNodes(new_id, commonRoot)
-				 		path2 = self.getPathBetweenTwoNodes(terminate, commonRoot)
-
-				 		ddd = 10000
-				 		if len(path1) > 128 or len(path2) > 128:
-				 			ddd = 100000
-				 		else:
-				 			ddd,_ = PathSimilarity.PathSimilarityLatLon(path1, path2, threshold = 0.00030)
-
-				 		print("Remove Merged Road!!!", ddd/32.0)
-
-				 		lenp1 = self.getPathLength(path1)
-				 		lenp2 = self.getPathLength(path2)
+				self.nodes[new_id]['OutNodes'].append((forestIdx, terminate))
+				t.nodes[terminate]['InNodes'].append((self.forestIdx, new_id))
 
 
-				 		if ddd/32.0 < 0.00020:
-				 			# Only remove the new node
-				 			self.nodes[new_id]['referenceCounter'] = 0 # Will be deleted soon
+				# Remove similar loop  Decide to remove this part, too complex
+				# Decide to add this part back
+				# The deffered branch detection can introduce a lot of loops...
+				# Maybe add something to focus only on deffered branch detection
+				#
+				if t == self :
+					commonRoot = self.findCommonRoot(new_id, terminate, depth = 128)
 
-				 			# delete it now to avoid racing
+					if commonRoot != -1:
 
-				 			cur_node = self.nodes[new_id]
-				 			while True:
+						print(new_id, terminate, commonRoot)
+
+						path1 = self.getPathBetweenTwoNodes(new_id, commonRoot)
+						path2 = self.getPathBetweenTwoNodes(terminate, commonRoot)
+
+						ddd = 10000
+						if len(path1) > 128 or len(path2) > 128:
+							ddd = 100000
+						else:
+							ddd,_ = PathSimilarity.PathSimilarityLatLon(path1, path2, threshold = 0.00030)
+
+						print("Remove Merged Road!!!", ddd/32.0)
+
+						lenp1 = self.getPathLength(path1)
+						lenp2 = self.getPathLength(path2)
+
+
+						if ddd/32.0 < 0.00020:
+							# Only remove the new node
+							self.nodes[new_id]['referenceCounter'] = 0 # Will be deleted soon
+
+							# delete it now to avoid racing
+
+							cur_node = self.nodes[new_id]
+							while True:
 								if cur_node['referenceCounter'] == 0 and cur_node['OutRegion'] != 1 and cur_node['removed'] == False:
 									new_lat = cur_node['lat']
 									new_lon = cur_node['lon']
-									if abs(new_lat-self.Region[0]) < 0.00025*2 or abs(new_lat-self.Region[2]) < 0.00025*2 or abs(new_lon-self.Region[1]) < 0.00040*2 or abs(new_lon-self.Region[3]) < 0.00040*2: 
+									if abs(new_lat-self.Region[0]) < 0.00025*2 or abs(new_lat-self.Region[2]) < 0.00025*2 or abs(new_lon-self.Region[1]) < 0.00040*2 or abs(new_lon-self.Region[3]) < 0.00040*2:
 										break
 
 
@@ -2026,10 +2025,10 @@ class RoadTree:
 									break
 
 
-		 		print("Terminate Node "+str(new_id))
-		 		break
+				print("Terminate Node "+str(new_id))
+				break
 
-		 	forestIdx += 1
+			forestIdx += 1
 
 
 
@@ -2046,7 +2045,7 @@ class RoadTree:
 			for i in range(n):
 				#if raw_score[i] > 0 and raw_score[i] >= raw_score[i-1] and raw_score[i] >= raw_score[(i+1) % n]:
 				if raw_score[i] > 0 and raw_score[(i+1) % n] > 0 and raw_score[(i-1+n) % n] > 0 and raw_score[i] >= raw_score[(i-1)] and raw_score[i] >= raw_score[(i+1) % n]:
-					result[i] = raw_score[i] 
+					result[i] = raw_score[i]
 					for j in range(-1,2):
 						score_mask[(i+j)%n] = 1
 
@@ -2066,14 +2065,14 @@ class RoadTree:
 		for node in self.nodes:
 
 			if node['isDead'] == 1:
-				cur_node = node 
+				cur_node = node
 
 				# Remove them 1 layer by 1 layer (depth)
 				while True:
 					if cur_node['referenceCounter'] == 0 and cur_node['OutRegion'] != 1 and cur_node['removed'] == False:
 						new_lat = cur_node['lat']
 						new_lon = cur_node['lon']
-						if abs(new_lat-self.Region[0]) < 0.00025*2 or abs(new_lat-self.Region[2]) < 0.00025*2 or abs(new_lon-self.Region[1]) < 0.00040*2 or abs(new_lon-self.Region[3]) < 0.00040*2: 
+						if abs(new_lat-self.Region[0]) < 0.00025*2 or abs(new_lat-self.Region[2]) < 0.00025*2 or abs(new_lon-self.Region[1]) < 0.00040*2 or abs(new_lon-self.Region[3]) < 0.00040*2:
 							break
 
 
@@ -2127,7 +2126,7 @@ class RoadTree:
 				# Angle Limitation
 				if node['parent'] != node['id'] and self.nodes[node['parent']]['Aux'] != 1:
 
-					mask = [0] * (360/DegreeResolution)
+					mask = [0] * (DegreeConvert)
 
 					p_dir = node['parentDIR']
 
@@ -2136,30 +2135,30 @@ class RoadTree:
 
 					p_cur = p_dir + 2
 
-					for i in range(360/DegreeResolution/3 - 2):
-						if p_next_node[(p_cur+360/DegreeResolution) % (360/DegreeResolution)] > low_threshold:
+					for i in range(DegreeConvert/3 - 2):
+						if p_next_node[(p_cur+DegreeConvert) % (DegreeConvert)] > low_threshold:
 							break
 
-						mask[(p_cur+360/DegreeResolution) % (360/DegreeResolution)] = 1
+						mask[(p_cur+DegreeConvert) % (DegreeConvert)] = 1
 						p_cur = p_cur + 1
 
 
 
 					p_cur = p_dir - 2
 
-					for i in range(360/DegreeResolution/3 - 2):
-						if p_next_node[(p_cur+360/DegreeResolution) % (360/DegreeResolution)] > low_threshold:
+					for i in range(DegreeConvert/3 - 2):
+						if p_next_node[(p_cur+DegreeConvert) % (DegreeConvert)] > low_threshold:
 							break
 
-						mask[(p_cur+360/DegreeResolution) % (360/DegreeResolution)] = 1
+						mask[(p_cur+DegreeConvert) % (DegreeConvert)] = 1
 						p_cur = p_cur - 1
 
 
 					for p_cur in range(p_dir - 2, p_dir + 3):
-						mask[(p_cur+360/DegreeResolution) % (360/DegreeResolution)] = 1
+						mask[(p_cur+DegreeConvert) % (DegreeConvert)] = 1
 
 
-					for i in range(360/DegreeResolution):
+					for i in range(DegreeConvert):
 						if mask[i] == 0:
 							next_nodes[i] = 0
 
@@ -2170,14 +2169,14 @@ class RoadTree:
 				# Forks
 
 				if node['id'] == 0 and node['initDir'] != -1:
-					
+
 					p_dir = int(node['initDir'] / DegreeResolution)
 					print("Limited Angle Entrance", p_dir - 2, p_dir + 2)
 
 					for p_cur in range(p_dir - 2, p_dir + 3):
-						node['nextNode'][(p_cur+360/DegreeResolution) % (360/DegreeResolution)] *= -1
+						node['nextNode'][(p_cur+DegreeConvert) % (DegreeConvert)] *= -1
 
-					for i in range(360/DegreeResolution):
+					for i in range(DegreeConvert):
 						if node['nextNode'][i] < 0:
 							node['nextNode'][i] *= -1
 						else:
@@ -2185,11 +2184,11 @@ class RoadTree:
 
 
 
-				### 
+				###
 
 				for nd in node['nextNode']:
 					if nd > low_threshold:
-						node['nextNodeNumber'] += 1 
+						node['nextNodeNumber'] += 1
 
 
 
@@ -2231,16 +2230,16 @@ class RoadTree:
 
 				node['exitID'] = exitID
 				#if node['exitID'] == self.nodes[node['parent']]['exitID'] and node['exitID'] == self.nodes[self.nodes[node['parent']]['parent']]['exitID'] and node['exitID'] != 0:
-				
+
 				if node['exitID'] == self.nodes[node['parent']]['exitID'] and node['exitID'] != 0:
 					node['isExited'] = True
 					#print(node['id'],"Exit the Region", node['exitID'])
 					continue
 
 
-			node['isDead'] = 1 
-			for i in range(360/DegreeResolution):
-				
+			node['isDead'] = 1
+			for i in range(DegreeConvert):
+
 				debug_print(i, node['score'][i], max_score, next_nodes[i], inRange, node['children'])
 
 				if node['score'][i] > max_score and next_nodes[i] > 0 and inRange and i not in node['children']:
@@ -2248,8 +2247,8 @@ class RoadTree:
 					_direction = i
 					max_score = node['score'][i]
 
-					
-					
+
+
 
 				if  node['score'][i] > 0 and next_nodes[i] > 0 and inRange and i not in node['children']:
 					node['isDead'] = 0
@@ -2277,7 +2276,7 @@ class RoadTree:
 			hyperJump = 0 # Removed?
 
 			# Half step size
-			node = InitNode(parent_lat + math.sin(math.radians(_direction * DegreeResolution)) * StepSize/2, parent_lon + math.cos(math.radians(_direction * DegreeResolution)) / math.cos(math.radians(parent_lat)) * StepSize/2, new_id, new_parent, [], _direction) 
+			node = InitNode(parent_lat + math.sin(math.radians(_direction * DegreeResolution)) * StepSize/2, parent_lon + math.cos(math.radians(_direction * DegreeResolution)) / math.cos(math.radians(parent_lat)) * StepSize/2, new_id, new_parent, [], _direction)
 			self.nodes.append(node)
 
 			node['InNodes'].append((-1, new_parent))
@@ -2329,7 +2328,7 @@ class RoadForest:
 		# self.RegionImage = RegionImage
 
 		# disabled
-		self.RegionImage = None 
+		self.RegionImage = None
 
 
 
@@ -2337,7 +2336,7 @@ class RoadForest:
 		#ExitImage = np.zeros((np.shape(mask)[0], np.shape(mask)[1]), dtype = np.uint8)
 		#ExitImage = Red
 
-		#ExitImage[np.where((Alpha == 0))] = 0 
+		#ExitImage[np.where((Alpha == 0))] = 0
 
 		#self.ExitMask = ExitImage
 		self.ExitMask = None
@@ -2355,7 +2354,7 @@ class RoadForest:
 
 
 
-		
+
 		ind = 0
 		for startingPoint in startingPoints:
 			newTree = RoadTree(config, self.CNNOutput)
@@ -2367,16 +2366,16 @@ class RoadForest:
 
 			self.oks.append(True)
 			self.score.append((ind, 1))
-			newTree.forestIdx = ind 
+			newTree.forestIdx = ind
 
 			ind += 1
 
 			self.RoadTrees.append(newTree)
 
-			
+
 
 		for tree in self.RoadTrees:
-			tree.forest = self.RoadTrees  # reference 
+			tree.forest = self.RoadTrees  # reference
 			tree.updateScoreMultipleStepSize(0)
 
 
@@ -2522,21 +2521,21 @@ class RoadForest:
 
 
 if __name__ == "__main__":
-	global StepSize
+	#global StepSize
 
 
 	config_file = sys.argv[1]
 	config = {}
 	dumpname = sys.argv[2]
 
-	
+
 	with open(config_file, "r") as fin:
 		config = json.load(fin)
 
 
 	# Some Default Internal Configs (overrided by the config file)
 	if 'history_length' not in config.keys():
-		# You may choose one of the following choices. 
+		# You may choose one of the following choices.
 		# The larger the number is, the 'higher' the threshold is.
 		# A 'higher' threshold will lead to high precision but low recall.
 
@@ -2555,7 +2554,7 @@ if __name__ == "__main__":
 
 	if 'merge_detector' not in config.keys():
 		# The 'distance_only' approach is the basic one. It will only
-		# check the distance of two road segments. If they are close 
+		# check the distance of two road segments. If they are close
 		# enough, they will be merged.
 
 		# The 'kde_based' approach add some heuristic criterions
@@ -2571,7 +2570,7 @@ if __name__ == "__main__":
 		config['merge_detector_evaluate_all'] = True
 
 	if 'merge_detector_path_length' not in config.keys():
-		config['merge_detector_path_length'] = 12 # 
+		config['merge_detector_path_length'] = 12 #
 
 	if 'keep_deadend' not in config.keys():
 		# This option determines wheterh we should keep those dead ends.
@@ -2593,25 +2592,25 @@ if __name__ == "__main__":
 
 	subname = ""
 
-	
+
 	dumpname += "_"+str(config['minimal_number_of_trips'])+"_"+str(config['minimal_number_of_trips_deferred_branch'])+"_"+str(config['history_length'])+"_"+str(config['keep_deadend'])
 	dumpname += "_"+str(StepSize)+"_"+str(DBDCheckRange)+"_"+str(config['merge_detector_path_length'])+"_"
 	dumpname += "20180731_"+str(base_port)+"_"
 
 	date = "20180731_auto_radius_stable_"+subname
 
-	
+
 	Popen("mkdir -p %s"% config['OutputFolder']+"/"+date, shell=True).wait()
 
-	config['OutputFolder'] = config['OutputFolder'] + "/"+date 
+	config['OutputFolder'] = config['OutputFolder'] + "/"+date
 
 
-	
+
 	roadForest = RoadForest(config)
 
 	start_ts = time()
 
-	for i in xrange(500000):
+	for i in range(500000):
 		print("Time Elpsed ", time()-start_ts, " s")
 		if roadForest.exploreOneByOne(idx = i) == False:
 			roadForest.dump(config['OutputFolder']+"/"+dumpname+str(i)+"_last")
@@ -2621,6 +2620,3 @@ if __name__ == "__main__":
 		# save the map every 1000 iterations
 		if (i % 1000 == 0):
 			roadForest.dump(config['OutputFolder']+"/"+dumpname+str(i))
-
-
-	
