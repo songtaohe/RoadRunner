@@ -167,6 +167,15 @@ python3 VisualizeRoadGraph.py graph_input image_output
 
 You can refer to line 316 in RoadGraph.py for the details of this format.
 
+### Input Converter and Results
+
+You can use the [RoadRunner input converter](https://github.com/Erfanh1995/Roadrunner_inputconverter) developed by [Erfan Hosseini](https://github.com/Erfanh1995) to convert GPS trips from a few public GPS datasets into RoadRunner format. 
+
+Here is an output example on the popular 'Chicago' dataset.
+
+![Chicago](example/chicago.png)
+
+
 
 ### Post-processing with Map-matching
 
