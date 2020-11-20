@@ -1274,19 +1274,19 @@ class RoadTree:
 		for j in range(DegreeConvert):
 			if self.nodes[nodeID]['rawScore'][j] > 0 :
 				s = 0
-				for i in range(kernel_size/2):
+				for i in range(kernel_size//2):
 					if tmp_score[(j + i + 1 + DegreeConvert) % (DegreeConvert)] > 0:
-						s = s + tmp_score[(j + i + 1+ DegreeConvert) % (DegreeConvert)] * gaussian_kernel[i + kernel_size/2 + 1]
+						s = s + tmp_score[(j + i + 1+ DegreeConvert) % (DegreeConvert)] * gaussian_kernel[i + kernel_size//2 + 1]
 					else:
 						break
 
-				for i in range(kernel_size/2):
+				for i in range(kernel_size//2):
 					if tmp_score[(j - i - 1 + DegreeConvert) % (DegreeConvert)] > 0:
-						s = s + tmp_score[(j - i - 1 + DegreeConvert) % (DegreeConvert)] * gaussian_kernel[kernel_size/2 - i -1]
+						s = s + tmp_score[(j - i - 1 + DegreeConvert) % (DegreeConvert)] * gaussian_kernel[kernel_size//2 - i -1]
 					else:
 						break
 
-				s = s + tmp_score[j] * gaussian_kernel[kernel_size/2]
+				s = s + tmp_score[j] * gaussian_kernel[kernel_size//2]
 
 
 
@@ -1404,7 +1404,7 @@ class RoadTree:
 		parent_list = []
 		cur_id = new_id
 
-		for i in xrange(10):
+		for i in range(10):
 			parent_list.append(cur_id)
 			cur_id = self.nodes[cur_id]['parent']
 
@@ -1941,10 +1941,10 @@ class RoadTree:
 					self.index_deferredLinks.insert(peakID, (peaklat-0.00010, peaklon-0.00015, peaklat+0.00010, peaklon+0.00015))
 
 
-		reverseDIR = (DegreeConvert/2 + _direction) % (DegreeConvert)
+		reverseDIR = (DegreeConvert//2 + _direction) % (DegreeConvert)
 
-		for i in range(DegreeConvert/3):
-			self.nodes[new_id]['score'][(reverseDIR+i-DegreeConvert/6) % (DegreeConvert)] = 0
+		for i in range(DegreeConvert//3):
+			self.nodes[new_id]['score'][(reverseDIR+i-DegreeConvert//6) % (DegreeConvert)] = 0
 
 
 		for bias in range(-1,2):
@@ -2135,7 +2135,7 @@ class RoadTree:
 
 					p_cur = p_dir + 2
 
-					for i in range(DegreeConvert/3 - 2):
+					for i in range(DegreeConvert//3 - 2):
 						if p_next_node[(p_cur+DegreeConvert) % (DegreeConvert)] > low_threshold:
 							break
 
@@ -2146,7 +2146,7 @@ class RoadTree:
 
 					p_cur = p_dir - 2
 
-					for i in range(DegreeConvert/3 - 2):
+					for i in range(DegreeConvert//3 - 2):
 						if p_next_node[(p_cur+DegreeConvert) % (DegreeConvert)] > low_threshold:
 							break
 
