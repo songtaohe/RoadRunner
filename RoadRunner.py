@@ -84,7 +84,7 @@ def TraceQueryBatch(data, host="localhost", port=8002):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.connect((host, port))
 	data_string = ""
-	for i in range(len(data)/5):
+	for i in range(len(data)//5):
 		data_string = data_string + str(data[i*5+0])+","+str(data[i*5+1])+","+str(data[i*5+2])+","+str(data[i*5+3])+","+str(data[i*5+4])+","
 
 
@@ -106,7 +106,7 @@ def TraceQueryBatch3P(data, host="localhost", port=8002):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.connect((host, port))
 	data_string = ""
-	for i in range(int(len(data)/11)):
+	for i in range(int(len(data)//11)):
 		data_string = data_string + str(data[i*11+0])+","+str(data[i*11+1])+","+str(data[i*11+2])+","+str(data[i*11+3])+","+str(data[i*11+4])+","+str(data[i*11+5])+","+str(data[i*11+6])+","+str(data[i*11+7])+","+str(data[i*11+8])+","+str(data[i*11+9])+","+str(data[i*11+10])+","
 		#data_string = data_string + str(data[i*11+0])+","+str(data[i*11+1])+","+str(data[i*11+2])+","+str(data[i*11+3])+","+str(data[i*11+4])+","+str(data[i*11+5])+","+str(data[i*11+6])+","+str(data[i*11+7])+","+str(data[i*11+8])+",-1,-1,"
 
@@ -123,7 +123,7 @@ def TraceQueryBatch3P(data, host="localhost", port=8002):
 
 	t = time() - ts1
 
-	print(t, ts2-ts1, ts3-ts2)
+	#print(t, ts2-ts1, ts3-ts2)
 
 	return result
 
@@ -151,7 +151,7 @@ def TraceQueryNodeScores(data, host="localhost", port=8002):
 
 	t = time() - ts1
 
-	print(t, ts2-ts1, ts3-ts2)
+	#print(t, ts2-ts1, ts3-ts2)
 
 	return result
 
@@ -164,26 +164,31 @@ def TraceQuery3PInterpolation(data, host="localhost", port=8002):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.connect((host, port))
 	data_string = "C,"
-	for i in range(len(data)/11):
+	for i in range(len(data)//11):
 		data_string = data_string + str(data[i*11+0])+","+str(data[i*11+1])+","+str(data[i*11+2])+","+str(data[i*11+3])+","+str(data[i*11+4])+","+str(data[i*11+5])+","+str(data[i*11+6])+","+str(data[i*11+7])+","+str(data[i*11+8])+","+str(data[i*11+9])+","+str(data[i*11+10])+","
 		#data_string = data_string + str(data[i*11+0])+","+str(data[i*11+1])+","+str(data[i*11+2])+","+str(data[i*11+3])+","+str(data[i*11+4])+","+str(data[i*11+5])+","+str(data[i*11+6])+","+str(data[i*11+7])+","+str(data[i*11+8])+",-1,-1,"
 
 
 	#print("DataSentLen", len(data_string))
+	data_string = bytes(data_string, encoding='utf-8')
 	s.send(data_string)
 
-	num_str = s.recv(16384)
+	num_str = str(s.recv(16384))
+
 	num = int(num_str.split(' ')[1])
 
-	s.send("ok")
+	data_string = bytes("ok", encoding='utf-8')
+	s.send(data_string)
 
 	result = ""
 	for i in range(num):
-		result += s.recv(16384)
+		result += str(s.recv(16384))
+
+	#print(result)
 
 	items = result.split()
-	result = [float(item) for item in items[2:]]
-	print("Interpolation ",result)
+	result = [float(item) for item in items[2:-1]]
+	#print("Interpolation ",result)
 
 	return result
 
@@ -281,7 +286,7 @@ def latlonAngle(p1, p2):
 	if angle < 0:
 		angle += 360
 
-	print(p1, p2, x, y, angle)
+	#print(p1, p2, x, y, angle)
 
 	return angle
 # Check the merge!
@@ -307,7 +312,7 @@ def MergeChecker(traceA, traceB, r1 = 0.00005, r2 = 0.00005, r3 = 0.00005, d1 = 
 
 
 	n1 = 0
-	n2 = len(traceB) / 2 + 1
+	n2 = len(traceB) // 2 + 1
 	n3 = len(traceB) - 1
 
 	data.append(traceA[n3][0])
@@ -343,7 +348,7 @@ def MergeChecker(traceA, traceB, r1 = 0.00005, r2 = 0.00005, r3 = 0.00005, d1 = 
 
 	result = TraceQueryBatch3P(data)
 
-	print(result)
+	#print(result)
 
 	if result[0] > 2 and result[1] > 2:
 		return True
@@ -876,7 +881,7 @@ class RoadTree:
 			if counter > 10:
 				break
 
-		print("--- Gaussian Blur Iteration ", counter+1, d_peak, peaks)
+		#print("--- Gaussian Blur Iteration ", counter+1, d_peak, peaks)
 
 
 
@@ -902,19 +907,19 @@ class RoadTree:
 		for j in range(n):
 			if self.nodes[nodeID][itemname][j] > 0 :
 				s = 0
-				for i in range(kernel_size/2):
+				for i in range(kernel_size//2):
 					if tmp_score[(j + i + 1 + n) % n] > 0 and j + i + 1 < n:
-						s = s + tmp_score[(j + i + 1 + n) % n] * gaussian_kernel[i + kernel_size/2 + 1]
+						s = s + tmp_score[(j + i + 1 + n) % n] * gaussian_kernel[i + kernel_size//2 + 1]
 					else:
 						break
 
-				for i in range(kernel_size/2):
+				for i in range(kernel_size//2):
 					if tmp_score[(j - i - 1 + n) % n] > 0 and j - i - 1 >= 0:
-						s = s + tmp_score[(j - i - 1 + n) % n] * gaussian_kernel[kernel_size/2 - i -1]
+						s = s + tmp_score[(j - i - 1 + n) % n] * gaussian_kernel[kernel_size//2 - i -1]
 					else:
 						break
 
-				s = s + tmp_score[j] * gaussian_kernel[kernel_size/2]
+				s = s + tmp_score[j] * gaussian_kernel[kernel_size//2]
 
 
 
@@ -972,7 +977,7 @@ class RoadTree:
 			return [],[],[]
 
 
-		print("GMM size of X", len(X))
+		#print("GMM size of X", len(X))
 
 		X = np.asarray(X).reshape(-1,1)
 
@@ -982,12 +987,12 @@ class RoadTree:
 		nPeak = bic.index(min(bic))
 
 		peaks = [int(m[nPeak].means_[i]) for i in range(nPeak+1)]
-		covars = m[nPeak].covars_
+		covars = m[nPeak].covariances_
 		weight = m[nPeak].weights_
 
-		print(peaks)
-		print(covars)
-		print(weight)
+		#print(peaks)
+		#print(covars)
+		#print(weight)
 
 		return peaks, covars, weight
 
@@ -1201,7 +1206,7 @@ class RoadTree:
 
 					# make sure the circle don't overlap
 
-					print(i,r2,d,last_node_ind)
+					#print(i,r2,d,last_node_ind)
 
 					if i == 0:
 						r2 = 0.00005
@@ -1224,7 +1229,7 @@ class RoadTree:
 					query_data.append([getNode(node_list[i])['lat'],getNode(node_list[i])['lon'], r2, d])
 					last_node_ind = i
 
-				print(query_data)
+				#print(query_data)
 
 				new_score = self.nodeScoreWithPath(query_data)
 
@@ -1515,18 +1520,18 @@ class RoadTree:
 				s = s / 32.0
 				ss = s
 
-				print("Terminate Check", s)
+				#print("Terminate Check", s)
 
 
 
 				if self == other and k == new_id:
 					s = 100
 
-				print("Terminate Check", s)
+				#print("Terminate Check", s)
 				if self == other and CommonRootCheck(path1, path2) == True:
 					s = 100
 
-				print("Terminate Check", s)
+				#print("Terminate Check", s)
 
 
 				detectionType = 0
@@ -1540,14 +1545,14 @@ class RoadTree:
 
 
 					if valid :
-						print(new_id, k, s)
+						#print(new_id, k, s)
 				#if s < 0.00005:
 						result = k
 					elif self.config['merge_detector'] == 'kde_based':
 						detectionType = 1
 						similarity = MergeDetector.mergeDetector(path1, path2)
 						if similarity > 0.4 : # Old is 0.7
-							print(new_id, k, s)
+							#print(new_id, k, s)
 							result = k
 
 				elif s < self.config['merge_detector_search_threshold'] and self.config['merge_detector'] == 'kde_based': # old is this
@@ -1555,7 +1560,7 @@ class RoadTree:
 					detectionType = 2
 					similarity = MergeDetector.mergeDetector(path1, path2)
 					if similarity > 0.4 : # Old is 0.7
-						print(new_id, k, s)
+						#print(new_id, k, s)
 						result = k
 
 
@@ -1599,7 +1604,7 @@ class RoadTree:
 			s = s / 32.0
 			ss = s
 
-			print("Terminate Check", s)
+			#print("Terminate Check", s)
 
 
 
@@ -1608,11 +1613,11 @@ class RoadTree:
 			if self == other and k == new_id:
 				s = 100
 
-			print("Terminate Check", s)
+			#print("Terminate Check", s)
 			if self == other and CommonRootCheck(path1, path2) == True:
 				s = 100
 
-			print("Terminate Check", s)
+			#print("Terminate Check", s)
 
 
 			detectionType = 0
@@ -1623,7 +1628,7 @@ class RoadTree:
 				valid = MergeChecker(path1, path2)
 
 				if valid :
-					print(new_id, k, s)
+					#print(new_id, k, s)
 			#if s < 0.00005:
 					result = k
 					terminate_type = 1
@@ -1641,7 +1646,7 @@ class RoadTree:
 				detectionType = 2
 				similarity = MergeDetector.mergeDetector(path1, path2,port=base_port+1)
 				if similarity > 0.7 : # Old is 0.7
-					print(new_id, k, s)
+					#print(new_id, k, s)
 					result = k
 					terminate_type = 3
 
@@ -1667,7 +1672,7 @@ class RoadTree:
 		parent_id = link['node2']
 
 
-		for i in range(len(link['shape'])/2 - 1):
+		for i in range(len(link['shape'])//2 - 1):
 			lat1 = link['shape'][i*2]
 			lon1 = link['shape'][i*2+1]
 			lat2 = link['shape'][i*2+2]
@@ -1722,7 +1727,7 @@ class RoadTree:
 		debug_print(new_id, n1,v1,_direction)
 		debug_print(new_id, self.nodes[new_id]["rawScore"])
 
-		print(n1, v1)
+		#print(n1, v1)
 
 		v2 = 0
 		v3 = 0
@@ -1981,7 +1986,7 @@ class RoadTree:
 
 					if commonRoot != -1:
 
-						print(new_id, terminate, commonRoot)
+						#print(new_id, terminate, commonRoot)
 
 						path1 = self.getPathBetweenTwoNodes(new_id, commonRoot)
 						path2 = self.getPathBetweenTwoNodes(terminate, commonRoot)
@@ -1992,7 +1997,7 @@ class RoadTree:
 						else:
 							ddd,_ = PathSimilarity.PathSimilarityLatLon(path1, path2, threshold = 0.00030)
 
-						print("Remove Merged Road!!!", ddd/32.0)
+						#print("Remove Merged Road!!!", ddd/32.0)
 
 						lenp1 = self.getPathLength(path1)
 						lenp2 = self.getPathLength(path2)
@@ -2025,7 +2030,7 @@ class RoadTree:
 									break
 
 
-				print("Terminate Node "+str(new_id))
+				#print("Terminate Node "+str(new_id))
 				break
 
 			forestIdx += 1
@@ -2418,7 +2423,7 @@ class RoadForest:
 				oklist.append(counter)
 			counter += 1
 
-		print("State:", idx, "maxscore", max_score, oklist ,okcounter,"/",len(self.oks))
+		print("Step:", idx, "maxscore", max_score, oklist ,okcounter,"/",len(self.oks))
 
 		if okcounter == len(self.oks):
 			return False
@@ -2479,7 +2484,7 @@ class RoadForest:
 				oklist.append(counter)
 			counter += 1
 
-		print("State:", idx, "maxscore", max_score, oklist ,okcounter,"/",len(self.oks))
+		print("Step:", idx, "maxscore", max_score, oklist ,okcounter,"/",len(self.oks))
 
 		if okcounter == len(self.oks):
 			return False
@@ -2491,7 +2496,7 @@ class RoadForest:
 
 	def exploreSingle(self, tid=0, idx=0):
 		ok = self.RoadTrees[tid].explore(self.Region, self.RoadTrees, self.RegionImage, self.CNNOutput)
-		print("State:",tid, idx, ok)
+		print("Step:",tid, idx, ok)
 
 		return ok
 
@@ -2573,7 +2578,7 @@ if __name__ == "__main__":
 		config['merge_detector_path_length'] = 12 #
 
 	if 'keep_deadend' not in config.keys():
-		# This option determines wheterh we should keep those dead ends.
+		# This option determines whether we should keep those dead ends.
 		config['keep_deadend'] = False # (default)
 		#config['keep_deadend'] = True
 

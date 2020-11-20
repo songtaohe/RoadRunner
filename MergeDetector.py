@@ -8,6 +8,7 @@ import socket
 #from PIL import Image
 import sys,os
 
+import io 
 from io import StringIO
 
 
@@ -30,27 +31,33 @@ def getGPSHistogram(lat2, lon2, lat1, lon1, lat0, lon0, radius, img_size, region
 
 	data_string = "G,"+str(lat2)+","+str(lon2)+","+str(lat1)+","+str(lon1)+","+str(lat0)+","+str(lon0)+","+str(radius)+","+str(minlat)+","+str(minlon)+","+str(maxlat)+","+str(maxlon)+","+str(img_size)+", "
 	#print(data_string)
+	data_string = bytes(data_string, encoding='utf-8')
 	s.send(data_string)
-	num_str = s.recv(16384)
+
+	num_str = str(s.recv(16384))
 	num = int(num_str.split(' ')[1])
 
 	#print(num_str)
-	s.send("ok")
+	data_string = bytes("ok", encoding='utf-8')
+	s.send(data_string)
 
-	result = ""
+	result = bytes("", encoding='utf-8')
 	for i in range(num):
 		result += s.recv(16384)
 
-	imgfile = StringIO.StringIO(result)
+	#imgfile = StringIO.StringIO(result)
+	#imgfile = io.StringIO(result)
+	imgfile = io.BytesIO(result)
+
+	#imgfile = socket.makefile(mode='rb', buffering=result)
 	# #print(len(result))
 
-	# f = open("tmp"+filename, 'wb')
-
+	# f = open("tmp.png", 'wb')
 	# f.write(result)
 	# f.close()
 
-	img = scipy.ndimage.imread(imgfile)
-
+	img = scipy.misc.imread(imgfile)
+	#img = scipy.misc.imread("tmp.png")
 	img = img.astype(np.float)
 
 	#GPSHistogramCache[(lat2, lon2, lat1, lon1, lat0, lon0, radius, img_size)] = gps_img/255.0
