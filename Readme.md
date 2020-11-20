@@ -160,7 +160,12 @@ python3 RoadForest2RoadGraph.py roadrunner_pickle_output graph_output
 
 RoadForest2RoadGraph.py takes the **RoadForest** class pickle file as input and generates a new pickle file with vertices/edges format. 
 
-You can refer to line 316 in RoadGraph.py for the details of this format. You may need to use this format for visualization and evaluation. Basically, self.nodes and self.edges should contain most of the information you need. 
+Later on, you can use the following command to create a visualization for the graph. 
+```
+python3 VisualizeRoadGraph.py graph_input image_output
+```
+
+You can refer to line 316 in RoadGraph.py for the details of this format.
 
 
 ### Post-processing with Map-matching
