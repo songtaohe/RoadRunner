@@ -147,7 +147,7 @@ You may have to tune some of the parameters to make different tradeoffs between 
 You have to first start the GPS trace server before running the following command. 
 
 ```
-python RoadRunner.py config.json output_prefix
+python3 RoadRunner.py config.json output_prefix
 ```
 
 This program will dump the output (the pickle of the **RoadForest** class) to the output folder every 1000 iterations. It will stop until all valid edges have been added to the graph. 
@@ -155,7 +155,7 @@ This program will dump the output (the pickle of the **RoadForest** class) to th
 You can convert the **RoadForest** format graph to a vertices/edges format using RoadForest2RoadGraph.py. E.g.,
 
 ```
-python RoadForest2RoadGraph.py roadrunner_pickle_output graph_output
+python3 RoadForest2RoadGraph.py roadrunner_pickle_output graph_output
 ```
 
 RoadForest2RoadGraph.py takes the **RoadForest** class pickle file as input and generates a new pickle file with vertices/edges format. 
