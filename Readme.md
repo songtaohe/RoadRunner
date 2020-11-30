@@ -155,17 +155,22 @@ This program will dump the output (the pickle of the **RoadForest** class) to th
 You can convert the **RoadForest** format graph to a vertices/edges format using RoadForest2RoadGraph.py. E.g.,
 
 ```
-python3 RoadForest2RoadGraph.py roadrunner_pickle_output graph_output
+python3 RoadForest2RoadGraph.py roadrunner_pickle_output pickle_graph_output
 ```
 
 RoadForest2RoadGraph.py takes the **RoadForest** class pickle file as input and generates a new pickle file with vertices/edges format. 
 
 Later on, you can use the following command to create a visualization for the graph. 
 ```
-python3 VisualizeRoadGraph.py graph_input image_output
+python3 VisualizeRoadGraph.py pickle_graph_input image_output
 ```
 
-You can refer to line 316 in RoadGraph.py for the details of this format.
+You can refer to line 316 in RoadGraph.py for the details of this format. You can also convert this pickle file into a more readable json format using, 
+
+```
+python3 RoadGraph2Json.py pickle_graph_input json_graph_output
+```
+
 
 ### Input Converter and Results
 
